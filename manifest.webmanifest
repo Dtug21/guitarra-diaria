@@ -1,18 +1,21 @@
-﻿{
+{
   "name": "Guitarra Diaria",
   "short_name": "Guitarra",
-  "description": "Rutina diaria de guitarra en sesiones cortas con progresión automática.",
+  "description": "Escuela de guitarra: práctica diaria, lecciones, canciones con tablatura, metrónomo y afinador.",
   "lang": "es",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#07090E",
-  "theme_color": "#1A1208",
+  "background_color": "#141413",
+  "theme_color": "#141413",
   "icons": [
     {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png"},
     {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png"},
     {"src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ],
+  "shortcuts": [
+    {"name": "Afinador", "url": "./?ir=afin", "icons": [{"src": "icons/icon-192.png", "sizes": "192x192"}]},
+    {"name": "Canciones", "url": "./?ir=canciones", "icons": [{"src": "icons/icon-192.png", "sizes": "192x192"}]}
   ]
 }
-

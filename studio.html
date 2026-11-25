@@ -694,6 +694,8 @@
        PART A — SONG_LIBRARY (CLEAN REUSABLE JSON DATA LAYER)
        PART B — GUITARLAB ENGINE (AUDIO, SVG, FRETBOARD, UI)
        ============================================================ -->
+  <script src="sonidos/indice.js"></script>
+<script src="guitarra.js"></script>
   <script>
     (() => {
       'use strict';
@@ -1638,65 +1640,37 @@
           osc.stop(now + 0.06);
         }
 
+        // Guitarra modelada (guitarra.js)
+        get guitar() {
+          if (!this._guitar) this._guitar = Guitarra.crear(this.ctx, this.master);
+          return this._guitar;
+        }
+
+        // Apaga las notas que sigan sonando
+        silence() {
+          if (this._guitar) this._guitar.cortar();
+        }
+
         playNote(s, f, options = {}) {
           this.ensure();
-          const now = options.startTime || this.ctx.currentTime;
           const tech = options.tech || '';
-          const freq = STRING_BASE_FREQ[s] * Math.pow(2, f / 12);
-
-          // Determine natural envelope based on articulation
           let duration = options.duration || 1.1;
-          let vol = options.volume || 0.2;
-          let attack = 0.009;
+          let vel = (options.volume || 0.2) * 2.1;
 
-          if (tech === 'staccato') {
-            duration = Math.min(duration, 0.17);
-          } else if (tech === 'let-ring' || tech === 'tie') {
-            duration = Math.max(duration, 2.1);
-          } else if (tech === 'pull-off-target') {
-            attack = 0.018;
-            vol *= 0.85;
-          }
+          if (tech === 'staccato') duration = Math.min(duration, 0.17);
+          else if (tech === 'let-ring' || tech === 'tie') duration = Math.max(duration, 2.1);
+          const soft = tech === 'pull-off-target' || tech === 'hammer-on-target';
+          if (soft) vel *= 0.8;
 
-          // Warm acoustic blend: triangle fundamental + gentle sawtooth overtone + subtle 2nd harmonic
-          const osc1 = this.ctx.createOscillator();
-          const osc2 = this.ctx.createOscillator();
-          const osc3 = this.ctx.createOscillator();
-          const filter = this.ctx.createBiquadFilter();
-          const g = this.ctx.createGain();
-
-          osc1.type = 'triangle';
-          osc1.frequency.setValueAtTime(freq, now);
-
-          osc2.type = 'sawtooth';
-          osc2.frequency.setValueAtTime(freq * 1.0012, now);
-
-          osc3.type = 'sine';
-          osc3.frequency.setValueAtTime(freq * 2, now);
-
-          const mix2 = this.ctx.createGain();
-          mix2.gain.value = 0.22;
-          const mix3 = this.ctx.createGain();
-          mix3.gain.value = 0.12;
-
-          filter.type = 'lowpass';
-          filter.frequency.setValueAtTime(Math.min(freq * 7.5, 4000), now);
-          filter.frequency.exponentialRampToValueAtTime(Math.max(freq * 1.7, 380), now + Math.min(duration, 1.4));
-          filter.Q.value = 1.1;
-
-          g.gain.setValueAtTime(0.0001, now);
-          g.gain.linearRampToValueAtTime(vol, now + attack);
-          g.gain.exponentialRampToValueAtTime(0.0008, now + duration);
-
-          osc1.connect(filter);
-          osc2.connect(mix2); mix2.connect(filter);
-          osc3.connect(mix3); mix3.connect(filter);
-          filter.connect(g);
-          g.connect(this.master);
-
-          osc1.start(now); osc2.start(now); osc3.start(now);
-          const stopAt = now + duration + 0.04;
-          osc1.stop(stopAt); osc2.stop(stopAt); osc3.stop(stopAt);
+          this.guitar.tocar({
+            freq: STRING_BASE_FREQ[s] * Math.pow(2, f / 12),
+            t: options.startTime || this.ctx.currentTime,
+            dur: duration,
+            vel,
+            cuerda: s,
+            suave: soft,
+            corta: tech === 'staccato'
+          });
         }
 
         playTabEvent(ev, beatSec, isBeginnerMode) {
@@ -1742,9 +1716,9 @@
             if (f !== undefined && f >= 0) {
               const s = 6 - i; // frets[0]=string 6 (E), frets[5]=string 1 (e)
               this.playNote(s, f, {
-                startTime: now + idxCount * stepDelay,
+                startTime: now + idxCount * stepDelay + (idxCount ? Math.random() * 0.004 : 0),
                 duration: mode === 'arpeggio' ? 1.7 : duration,
-                volume,
+                volume: volume * (0.88 + Math.random() * 0.2),
                 tech: 'let-ring'
               });
               idxCount++;
@@ -1752,33 +1726,35 @@
           });
         }
 
+        // Rasgueo con las cuerdas tapadas («chuck»)
         playMutedStrum() {
           this.ensure();
           const now = this.ctx.currentTime;
-          const len = Math.floor(this.ctx.sampleRate * 0.045);
-          const buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
-          const data = buf.getChannelData(0);
-          for (let i = 0; i < len; i++) {
-            data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (len * 0.25));
-          }
-          const src = this.ctx.createBufferSource();
-          src.buffer = buf;
-          const filter = this.ctx.createBiquadFilter();
-          filter.type = 'bandpass';
-          filter.frequency.value = 1250;
-          filter.Q.value = 1.4;
-          const g = this.ctx.createGain();
-          g.gain.setValueAtTime(0.24, now);
-          g.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
-
-          src.connect(filter);
-          filter.connect(g);
-          g.connect(this.master);
-          src.start(now);
+          [6, 5, 4, 3, 2, 1].forEach((s, i) => {
+            this.guitar.tocar({ freq: STRING_BASE_FREQ[s] * 2, t: now + i * 0.006, dur: 0.12, vel: 0.22, cuerda: s, apagada: true });
+          });
         }
       }
 
       const audio = new AcousticEngine();
+
+      let seccionLista = null;
+      function precargarSeccion() {
+        const sec = getSection();
+        if (!sec || sec === seccionLista) return;
+        seccionLista = sec;
+        const notas = [];
+        const nota = (s, f, vel) => notas.push({ freq: STRING_BASE_FREQ[s] * Math.pow(2, f / 12), cuerda: s, vel });
+        (sec.tabMeasures || []).forEach(m => (m.events || []).forEach(ev => {
+          const varias = (ev.notes || []).length > 1;
+          [...(ev.notes || []), ...(ev.begNotes || [])].forEach(n => nota(n.s, n.f, varias ? 0.34 : 0.44));
+        }));
+        (sec.chordMeasures || []).forEach(m => {
+          const v = m.chord && getChordVoicing(m.chord);
+          if (v) v.frets.forEach((f, i) => { if (f >= 0) { nota(6 - i, f, 0.3); nota(6 - i, f, 0.18); } });
+        });
+        Guitarra.preparar(notas);
+      }
 
       /* ---------------------------------------------------------------------
          2. STATE & PERSISTENCE
@@ -1795,6 +1771,8 @@
             const custom = JSON.parse(raw);
             if (Array.isArray(custom)) {
               custom.forEach((cs) => {
+                if (validateSongJson(cs)) return;
+                cs.chords = cs.chords || {}; cs.transitions = cs.transitions || {}; cs.specialChords = cs.specialChords || [];
                 const idx = songLibrary.findIndex(s => s.id === cs.id);
                 if (idx >= 0) songLibrary[idx] = cs;
                 else songLibrary.push(cs);
@@ -2631,6 +2609,7 @@
       }
 
       function renderAllPracticeViews() {
+        try { precargarSeccion(); } catch (e) {}
         renderSectionHeaderAndSpeed();
         renderWorkspaceVisibility();
         const sec = getSection();
@@ -2680,6 +2659,7 @@
       }
 
       function stopPlayback(resetToLoopStart = false) {
+        audio.silence();
         clearTimeout(playTimer);
         playTimer = null;
         state.isPlaying = false;
@@ -2713,7 +2693,16 @@
         }
 
         updatePlayStatusUI();
+        nextAt = performance.now();
         tickEngine();
+      }
+
+      // Cada paso se agenda contra el reloj: los retrasos no se acumulan
+      let nextAt = 0;
+      function schedule(ms) {
+        const now = performance.now();
+        nextAt = (now - nextAt > 500) ? now + ms : nextAt + ms;
+        playTimer = setTimeout(tickEngine, Math.max(0, nextAt - now));
       }
 
       function tickEngine() {
@@ -2737,7 +2726,7 @@
             state.isCountingIn = false;
             state.step16 = 0;
           }
-          playTimer = setTimeout(tickEngine, beatMs);
+          schedule(beatMs);
           return;
         }
 
@@ -2772,9 +2761,11 @@
           if (triggeredIdx >= 0) {
             state.activeEventKey = `${state.measureIdx}:${triggeredIdx}`;
           }
-          renderTablatureGrid();
-          renderLiveFretboard();
-          renderCoach();
+          if (triggeredIdx >= 0 || state.step16 === 0) {
+            renderTablatureGrid();
+            renderLiveFretboard();
+            renderCoach();
+          }
         } else {
           // Chord mode
           if (state.guitarEnabled && m.chord) {
@@ -2823,7 +2814,7 @@
           }
         }
 
-        playTimer = setTimeout(tickEngine, step16Ms);
+        schedule(step16Ms);
       }
 
       /* ---------------------------------------------------------------------
@@ -3049,8 +3040,22 @@
         if (!parsed.specialChords) parsed.specialChords = [];
 
         const idx = songLibrary.findIndex(s => s.id === parsed.id);
+        const anterior = idx >= 0 ? songLibrary[idx] : null;
+        const idAntes = state.songId;
         if (idx >= 0) songLibrary[idx] = parsed;
         else songLibrary.push(parsed);
+        // Prueba a dibujarla antes de guardarla: si falla, se deshace
+        try {
+          selectSong(parsed.id);
+          renderLab();
+          renderGuide();
+        } catch (e) {
+          if (anterior) songLibrary[idx] = anterior; else songLibrary.pop();
+          selectSong(idAntes);
+          errBox.textContent = `La canción tiene datos que no se pueden mostrar: ${e.message}`;
+          errBox.classList.remove('hidden');
+          return;
+        }
 
         if (document.getElementById('chk-json-save-local').checked) {
           try {
@@ -3061,7 +3066,6 @@
         }
 
         closeJsonModal();
-        selectSong(parsed.id);
         showToast(`¡JSON aplicado en vivo: ${parsed.title}!`);
       }
 
@@ -3221,6 +3225,8 @@
           selectSong(songLibrary[0].id);
           showToast('Biblioteca restaurada a valores de fábrica');
         });
+
+        document.addEventListener('visibilitychange', () => { if (document.hidden && state.isPlaying) stopPlayback(false); });
 
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {

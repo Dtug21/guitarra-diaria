@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pruebas · Guitarra Diaria</title>
+<style>
+body{font:14px/1.5 system-ui,sans-serif;margin:0;padding:16px;background:#141413;color:#faf9f5}
+h1{font-size:18px;margin:0 0 8px}#res{font-weight:700}li{list-style:none;margin:2px 0}ul{padding:0}
+.ok{color:#8fbf7f}.no{color:#ff8a72;font-weight:600}
+iframe{width:393px;height:759px;border:1px solid #555;border-radius:8px;display:block;margin-top:16px}
+</style></head><body>
+<h1>Pruebas automáticas</h1>
+<p id="res">Corriendo…</p>
+<ul id="lista"></ul>
+<iframe id="app" title="App en prueba"></iframe>
+<script>
+// Guarda tus datos antes de probar y los devuelve al terminar
+const CLAVES=['gd1','gd1-notas','gd1-rescate','gd1-notas-rescate','guitarlab_state_v2','guitarlab_custom_songs_v2'];
+const RESPALDO='gd-pruebas-respaldo';
+function restaurar(){const r=localStorage.getItem(RESPALDO);if(r===null)return;const d=JSON.parse(r);CLAVES.forEach(k=>{if(d[k]===null)localStorage.removeItem(k);else localStorage.setItem(k,d[k])});localStorage.removeItem(RESPALDO)}
+restaurar(); // por si una corrida anterior se cortó
+localStorage.setItem(RESPALDO,JSON.stringify(Object.fromEntries(CLAVES.map(k=>[k,localStorage.getItem(k)]))));
+addEventListener('pagehide',restaurar);
+
+const $app=document.getElementById('app'),lista=document.getElementById('lista');
+let total=0,fallas=0;const errores=[];
+function ok(nombre,cond,detalle){total++;if(!cond){fallas++}const li=document.createElement('li');li.className=cond?'ok':'no';li.textContent=(cond?'✔ ':'✘ ')+nombre+(!cond&&detalle?' → '+detalle:'');lista.appendChild(li)}
+const espera=ms=>new Promise(r=>setTimeout(r,ms));
+function cargar(src){return new Promise(r=>{$app.onload=()=>{const w=$app.contentWindow;w.addEventListener('error',e=>errores.push(e.message));w.confirm=()=>true;r(w)};$app.src=src})}
+
+(async()=>{try{
+  CLAVES.forEach(k=>localStorage.removeItem(k));
+  let w=await cargar('index.html?t=1');const E=s=>w.eval(s);
+  ok('La app abre sin errores',!!E('typeof render==="function"'));
+
+  // ---------- datos ----------
+  ok('119 lecciones, ids únicos',E('LES.length===119&&new Set(LES.map(l=>l.id)).size===119'),E('LES.length'));
+  ok('Todos los acordes tienen 6 cuerdas',E('Object.values(CH).every(c=>c.f.length===6)'));
+  ok('Todos los acordes citados existen',E('[...LES,...Object.values(LV).flat()].every(l=>(l.cue||[]).every(c=>CH[c]))'));
+  const claves=E('Object.keys(DRILL).filter(k=>!(LBY[k]||k.startsWith("ev:")||Object.values(LV).flat().some(l=>l.n===k)))');
+  ok('Cada gráfica específica apunta a un ejercicio real',claves.length===0,claves.join(', '));
+  const malas=E(`(()=>{const m=[];const todos=[...LES,...Object.values(LV).flat(),...Object.keys(AR).map(a=>Object.assign({a},AR[a].ev))];
+    todos.forEach(L=>{try{const fr=framesFor(L);if(!fr){if(L.sc||L.cue||L.pat||L.seq)m.push((L.id||L.n)+': sin gráfica');return}
+      if(!fr.length)m.push((L.id||L.n)+': vacía');if(fr.some(x=>x.n.some(([s,f])=>!(s>=0&&s<6&&f>=0&&f<=17))))m.push((L.id||L.n)+': nota fuera de rango');
+      const h=vizHTML(fr);if(/NaN|undefined/.test(h))m.push((L.id||L.n)+': dibujo con NaN/undefined')}catch(e){m.push((L.id||L.n)+': '+e.message)}});return m})()`);
+  ok('Todas las gráficas se dibujan',malas.length===0,malas.slice(0,6).join(' | '));
+  ok('El Spider 1-3-2-4 muestra 5-7-6-8',E("framesFor({n:'Spider 1-3-2-4'}).slice(0,4).map(f=>f.n[0][1]).join()")==='5,7,6,8');
+  ok('Compases: 3/4 tiene 3 y 6/8 tiene 2',E('LBY.a3.beats===3&&LBY.r7.beats===2'));
+  ok('Arpegio simple no alterna bajos',E("(()=>{const f=framesFor(LBY.a1).filter(x=>x.d==='p'&&x.t===framesFor(LBY.a1)[0].t);return new Set(f.map(x=>x.n[0][0])).size===1})()"));
+
+  // ---------- teoría ----------
+  ok('Fa mayor usa Sib',E('nota(5,10)')==='Sib');
+  ok('No confunde palabras con acordes',E("['Estrofa','Coro','Bridge','Final','Doble'].every(x=>!parseCh(x))"));
+  ok('Lee acordes comunes',E("['C','Am','G7','Cmaj7','CM7','Dsus4','Bdim','F#m','Bb','D/F#','Cadd9','Em7','Rem','Sol7'].every(x=>parseCh(x))"),E("['C','Am','G7','Cmaj7','CM7','Dsus4','Bdim','F#m','Bb','D/F#','Cadd9','Em7','Rem','Sol7'].filter(x=>!parseCh(x)).join()"));
+  ok('CM7 es séptima mayor y Cm7 menor',E("parseCh('CM7').iv.join()+'|'+parseCh('Cm7').iv.join()")==='0,4,7,11|0,3,7,10');
+  ok('Preguntas con respuesta válida',E("Object.values(AR).filter(a=>a.ev.quiz).every(a=>Array.from({length:15},()=>makeQuiz(a.ev.quiz)).flat().every(q=>q.opts.includes(q.ans)&&new Set(q.opts).size===q.opts.length))"));
+
+  // ---------- afinador ----------
+  const tono=(f,sr,armonicos)=>`(()=>{const b=new Float32Array(4096);for(let i=0;i<b.length;i++){let v=0;${JSON.stringify(armonicos)}.forEach((a,h)=>v+=a*Math.sin(2*Math.PI*${f}*(h+1)*i/${sr}));b[i]=v*.3}return detectPitch(b,${sr})})()`;
+  const fallos=[];
+  [48000,44100].forEach(sr=>[73.42,82.41,98,110,146.83,196,246.94,329.63,440,659.26,880].forEach(f=>[[1],[1,.6,.4],[.3,1,.5]].forEach(h=>{const r=E(tono(f,sr,h)),c=1200*Math.log2(r/f);if(!(Math.abs(c)<4))fallos.push(f+'Hz@'+sr+' → '+r.toFixed(1))})));
+  ok('Afinador: error < 4 cents, también con armónicos fuertes',fallos.length===0,fallos.slice(0,5).join(' | '));
+  ok('Afinador: silencio no da nota',E('detectPitch(new Float32Array(4096),48000)')===-1);
+
+  // ---------- sonido de guitarra ----------
+  const malas2=E(`(()=>{const m=[];for(const sr of [44100,48000])for(let midi=38;midi<=81;midi+=1){const f=440*Math.pow(2,(midi-69)/12),b=Guitarra.cuerda(sr,f),r=detectPitch(b.slice(4800,8896),sr),c=1200*Math.log2(r/f);
+    if(!(Math.abs(c)<6)||b.some(x=>!isFinite(x)||Math.abs(x)>1))m.push(midi+'@'+sr+': '+c.toFixed(1))}return m})()`);
+  ok('Guitarra: todas las notas afinadas (menos de 6 cents)',malas2.length===0,malas2.slice(0,8).join(' | '));
+  ok('Guitarra: la nota se va apagando',E(`(()=>{const b=Guitarra.cuerda(48000,196),e=a=>b.slice(a,a+4800).reduce((s,x)=>s+x*x,0);return e(0)>e(48000)*2&&e(48000)>e(96000)&&e(48000)>0})()`));
+  ok('Guitarra: el golpe tapado es corto',E('Guitarra.cuerda(48000,196,{apagada:true}).length<48000*.2'));
+  ok('Los ejemplos de la app suenan sin errores',E("(()=>{playNotes({n:[48,52,55],chord:true});vzSound({n:[[0,3],[1,2]],d:'D'});stopSounds();tone(52,Met.ctx.currentTime,1,.3,0);return true})()"));
+
+  // ---------- grabaciones ----------
+  ok('Banco completo: 375 grabaciones',E('Guitarra.todas().length')===375,E('Guitarra.todas().length'));
+  const faltanS=[];for(const u of E('Guitarra.todas()')){const r=await fetch(u,{method:'HEAD',cache:'no-store'});if(!r.ok)faltanS.push(u)}
+  ok('Todas las grabaciones existen',faltanS.length===0,faltanS.slice(0,5).join());
+  ok('Cada nota usa su grabación en su cuerda',E(`[6,5,4,3,2,1].every(s=>Array.from({length:18},(_,f)=>{const m={6:40,5:45,4:50,3:55,2:59,1:64}[s]+f,g=Guitarra.elegir(440*Math.pow(2,(m-69)/12),s,.4);return g&&g.cuerda===s&&Math.abs(Math.log2(g.rate))<.09}).every(Boolean))`));
+  ok('Afinaciones graves (Re y Do#) se transponen',E("[37,38].every(m=>{const g=Guitarra.elegir(440*Math.pow(2,(m-69)/12),6,.4);return g&&g.cuerda===6&&g.rate<1})"));
+  const af=await w.eval(`(async()=>{const c=new OfflineAudioContext(1,48000,48000),mal=[];
+    for(const [m,s] of [[40,6],[45,5],[52,4],[55,3],[60,2],[64,1],[69,1],[76,1]])for(const v of [.18,.4,.8]){const g=Guitarra.elegir(440*Math.pow(2,(m-69)/12),s,v),b=await c.decodeAudioData(await (await fetch(g.url)).arrayBuffer());
+      const trozo=b.getChannelData(0).slice(14400,18496),pico=trozo.reduce((m,x)=>Math.max(m,Math.abs(x)),1e-9),r=detectPitch(trozo.map(x=>x/pico*.5),b.sampleRate)*g.rate,e=1200*Math.log2(r/(440*Math.pow(2,(m-69)/12)));if(!(Math.abs(e)<9))mal.push(g.url+' '+e.toFixed(1))}return mal})()`);
+  ok('Las grabaciones corregidas suenan afinadas',af.length===0,af.slice(0,6).join(' | '));
+  const mez=await w.eval(`(async()=>{const c=new OfflineAudioContext(2,44100*2,44100),g=Guitarra.crear(c,c.destination),n=[40,47,52,56,59,64].map((m,i)=>({freq:440*Math.pow(2,(m-69)/12),cuerda:6-i,vel:.32}));
+    await g.listo(n);n.forEach((x,i)=>g.tocar(Object.assign({t:.02+i*.022,dur:1.8},x)));const reales=g.voces().filter(v=>v.real).length,d=(await c.startRendering()).getChannelData(0);let p=0;for(const x of d)p=Math.max(p,Math.abs(x));return{reales,p}})()`);
+  ok('El rasgueo usa grabaciones reales sin saturar',mez.reales===6&&mez.p>.25&&mez.p<.99,JSON.stringify(mez));
+
+  // ---------- pantallas ----------
+  E("st.setup=true;st.ui2=true;save()");
+  for(const v of ['hoy','escuela','practica:dedos','practica:tools','canciones','canciones:est','nb','eval','afin','prog']){const[vv,sub]=v.split(':');E(`view='${vv}';${sub?(vv==='practica'?`pTab='${sub}';`:`cTab='${sub}';`):"cTab='rep';"}render()`);await espera(60);
+    const d=w.document,ancho=d.documentElement.scrollWidth;
+    ok(`Pantalla «${v}» sin desborde en 393 px`,ancho<=394,'ancho '+ancho);}
+  const rotas=[];
+  for(const id of E('LES.map(l=>l.id)')){try{E(`startLesson('${id}')`);if(w.document.documentElement.scrollWidth>394||w.document.querySelector('#player').scrollWidth>394)rotas.push(id+' (ancho)');E('closePlayer(true)')}catch(e){rotas.push(id+': '+e.message)}}
+  ok('Todas las lecciones abren y cierran',rotas.length===0,rotas.slice(0,8).join(' | '));
+  const ev=[];for(const a of E('Object.keys(AR)')){try{E(`startEval('${a}')`);E('closePlayer(true)')}catch(e){ev.push(a+': '+e.message)}}
+  ok('Las 12 evaluaciones abren',ev.length===0,ev.join(' | '));
+
+  // ---------- reproductor ----------
+  E("startLesson('r1')");const b=w.document.querySelector('#subt');
+  if(b){const antes=E('Met.subOn');b.click();ok('Botón de subdivisiones funciona en lecciones',E('Met.subOn')!==antes);E('Met.subOn=false')}
+  E('closePlayer(true)');
+  E("startLesson('a3')");ok('La lección en 3/4 muestra 3 puntos',w.document.querySelectorAll('#player #dots i').length===3);E('closePlayer(true)');
+  E("st.hist={};startRun(plan(10))");E("P.phase='play';P.running=true;P.ela=95;closePlayer(true)");
+  ok('El tiempo de un bloque cerrado sin calificar cuenta',E('Object.values(st.hist).reduce((a,b)=>a+(b.sec||b||0),0)')>0||E('JSON.stringify(st.hist)')!=='{}',E('JSON.stringify(st.hist)'));
+  E("startRun(plan(10));P.phase='play';P.running=true;P.left=100;P.ela=0;P.mark=Date.now()-30000;tickTimer()");
+  ok('El reloj recupera el tiempo en segundo plano',E('P.left')===70,E('P.left'));E('P.ela=0;closePlayer(true)');
+  E("Met.start(100,1,3,()=>{});Met.next=-50;Met.sched()");ok('El metrónomo no dispara ráfagas tras una pausa',E('Met.next>=Met.ctx.currentTime-0.3'));E('Met.stop()');
+
+  // ---------- mejoras pedagógicas ----------
+  ok('Solo 5 pestañas',E('TABS.length')===5);
+  ok('Gimnasio de dedos con 8 niveles',E('LV.dedos.length')===8&&E('LV.dedos.every(x=>x&&x.seq)'));
+  ok('El progreso del gimnasio antiguo se convierte',E("(()=>{const g=st;st={v:1,setup:true,prog:{dedos:{lvl:21,bpm:60}},hist:{},tests:[{lv:26,t:1,score:4}]};fill();const r=st.prog.dedos.lvl===4&&st.tests[0].lv===7;st=g;return r})()"));
+  ok('El plan diario tiene 4 bloques y suma su duración',E('[10,20,30].every(m=>plan(m).length===4&&plan(m).reduce((s,b)=>s+b[1],0)===m)'));
+  ok('La – Re – Mi va antes que Sol – Do – Re',E('LES.indexOf(LBY.c9)<LES.indexOf(LBY.c2)'));
+  ok('El barrido no se recomienda como obligatorio',E("LBY.md7.opt===true&&!recommend().some(r=>r.l.id==='md7')"));
+  ok('Repaso: vuelve a los 3 días y luego se espacia',E("(()=>{const r={t:Date.now()};programarRepaso(r,90,false);const a=Math.round((r.rep.due-Date.now())/DIA);r.rep.due=Date.now()-1;programarRepaso(r,90,true);const b=Math.round((r.rep.due-Date.now())/DIA);programarRepaso(r,40,true);return a===3&&b===10&&Math.round((r.rep.due-Date.now())/DIA)===1})()"));
+  E("st.les.mi1={best:90,last:90,n:1,t:Date.now()-5*DIA,bpm:60};recMemo=null;view='hoy';render()");
+  ok('Una lección vencida aparece para repasar',w.document.body.innerText.includes('Para repasar hoy'));
+  E("delete st.les.mi1;recMemo=null");
+  E("startLesson('mi2');lessonAct('lfin');[0,1,2,3].forEach(i=>lessonAct('rt:'+i+':2'))");
+  ok('Sin la prueba limpia no se puede calificar',w.document.querySelector('[data-a=lsub]').disabled);
+  E("lessonAct('vu:0');lessonAct('lsub')");ok('Sin vueltas limpias no se aprueba aunque todo sea «Sí»',E('P.res.s')===50,E('P.res.s'));E('closePlayer(true);delete st.les.mi2;recMemo=null');
+  E("startLesson('rp1');lessonAct('lband');lessonAct('lgo')");await espera(900);ok('Una pieza con acordes suena con batería y bajo',E('Met.on&&typeof Met.band==="function"'));E('closePlayer(true)');
+  E("view='practica';pTab='tools';render();jamAct('jplay')");await espera(1200);ok('La base libre suena y se detiene',E('Met.on&&!!Met.band'));E("jamAct('jplay')");ok('…y se detiene',E('!Met.on'));
+  const basesOk=E("Object.keys(ESTILOS).every(k=>{Met.ensure();Met.beats=ESTILOS[k].beats;Met.sub=ESTILOS[k].sub;const f=banda(k,['Am','G']);for(let i=0;i<24;i++)f(i,Math.floor(i/Met.sub),Met.ctx.currentTime+.01);return true})&&BASES.every(b=>b[1].every(c=>CH[c])&&ESTILOS[b[2]]&&SC[b[4]])");
+  ok('Todos los estilos de base funcionan',basesOk);E('stopSounds()');
+  ok('Cinco posiciones de pentatónica, todas dentro de la escala',E("['pent1','pent2','pent3','pent4','pent5'].every(k=>SC[k].fr.every((a,s)=>a.every(f=>[9,0,2,4,7].includes((OPEN[s]+f)%12))))"));
+  ok('CAGED y tríadas solo usan Do, Mi y Sol',E("['a8','a9'].every(i=>framesFor(LBY[i]).every(x=>x.n.every(([s,f])=>[0,4,7].includes((OPEN[s]+f)%12))))"));
+  ok('Hay 15 piezas de repertorio con contenido',E("LES.filter(l=>l.rep).length===15&&LES.filter(l=>l.rep).every(l=>framesFor(l).length>=8)"));
+
+  // ---------- respaldo e importación ----------
+  const feo={v:1,prog:{warm:{lvl:99,bpm:'"><img src=x onerror=parent.hackeado=1>'}},hist:{},theme:'dark',nb:{log:[],pend:[],ideas:[{id:'a"><img src=x onerror=parent.hackeado=1>',title:'x',chords:'C G',notes:'',bpm:90}],songs:[]}};
+  E(`importData(new Blob([${JSON.stringify(JSON.stringify(feo))}]))`);await espera(250);E("view='nb';nbTab='ideas';render()");await espera(150);
+  ok('Un respaldo manipulado no ejecuta código',!window.hackeado);
+  ok('Al importar se corrigen niveles imposibles',E('st.prog.warm.lvl<LV.warm.length&&st.prog.warm.bpm>=0'));
+  ok('Importar deja copia de lo anterior',localStorage.getItem('gd1-rescate')!==null);
+  const hoja={'libre:a|p1':{titulo:'Mi hoja',c:'var(--faint)',papel:'tab',trazos:[{t:'p',c:'tinta',w:5,d:[10,10,5,40,40,5]},{t:'r',c:'amarillo',w:28,d:[10,60,5,90,60,5]}]}};
+  E(`importData(new Blob([${JSON.stringify(JSON.stringify({v:1,prog:{},hist:{},_notas:hoja}))}]))`);await espera(250);
+  ok('Exportar e importar conserva los cuadernos a mano',localStorage.getItem('gd1-notas')===JSON.stringify(hoja),localStorage.getItem('gd1-notas'));
+  localStorage.removeItem('gd1-rescate');localStorage.setItem('gd1','{esto está roto');
+  w=await cargar('index.html?t=2');
+  ok('Un dato dañado se rescata antes de empezar de cero',localStorage.getItem('gd1-rescate')==='{esto está roto',localStorage.getItem('gd1-rescate'));
+
+  // ---------- canciones ----------
+  localStorage.setItem('guitarlab_custom_songs_v2',JSON.stringify([{id:'rota'},null,7]));
+  w=await cargar('studio.html?t=3');await espera(500);
+  ok('Canciones abre aunque haya una canción guardada dañada',w.document.body.innerText.length>200);
+
+  const d=w.document;let falloSonido='';const alFallar=e=>falloSonido=e.message;w.addEventListener('error',alFallar);
+  ['btn-strum-current','btn-arp-current','btn-strum-next','btn-play'].forEach(i=>d.getElementById(i)?.click());await espera(1500);d.getElementById('btn-play')?.click();
+  ok('Canciones: rasgueo, arpegio y reproducción suenan sin errores',!falloSonido&&!!w.Guitarra,falloSonido);
+
+  // ---------- instalación ----------
+  const sw=await (await fetch('sw.js',{cache:'no-store'})).text(),man=await (await fetch('manifest.webmanifest',{cache:'no-store'})).json();
+  const archivos=[...sw.match(/FILES = \[([^\]]*)\]/)[1].matchAll(/'([^']+)'/g)].map(m=>m[1]);
+  const faltan=[];for(const f of archivos){const r=await fetch(f,{cache:'no-store'});if(!r.ok)faltan.push(f)}
+  ok('Todos los archivos para usar sin internet existen',faltan.length===0,faltan.join());
+  ok('Los íconos del manifiesto están guardados',man.icons.every(i=>archivos.includes('./'+i.src)));
+  await espera(300);
+  ok('Sin errores de JavaScript durante las pruebas',errores.length===0,[...new Set(errores)].slice(0,4).join(' | '));
+}catch(e){ok('Las pruebas terminaron',false,e.message+' '+(e.stack||'').split('\n')[1])}
+finally{$app.onload=null;$app.src='about:blank';await espera(300);restaurar();
+  const r=document.getElementById('res');r.textContent=fallas?`❌ ${fallas} de ${total} fallaron`:`✅ ${total} de ${total} pasaron`;r.className=fallas?'no':'ok';window.RESULTADO={total,fallas};}
+})();
+</script>
+</body></html>
