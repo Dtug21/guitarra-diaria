@@ -1,0 +1,3251 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GuitarLab Studio — Motor Base de Aprendizaje</title>
+
+  <!-- Google Fonts: Lora (editorial), Poppins (UI), JetBrains Mono (tablaturas & código) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Lora:ital,wght@0,500;0,600;0,700;1,500&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ============================================================
+       DESIGN TOKENS: Warm Charcoal (Dark) & Ivory Editorial (Light)
+       ============================================================ */
+    :root,
+    [data-theme="dark"] {
+      --bg-main: #141413;
+      --bg-card: #1C1C1A;
+      --bg-elevated: #252522;
+      --bg-subtle: #181816;
+      --border-color: #2E2E2A;
+      --border-strong: #45443E;
+      --text-main: #FAF9F5;
+      --text-muted: #A9A69E;
+      --text-faint: #75726A;
+      --accent: #D77757;
+      --accent-hover: #E58768;
+      --accent-soft: rgba(215, 119, 87, 0.14);
+      --accent-border: rgba(215, 119, 87, 0.45);
+      --success: #6EB06A;
+      --success-soft: rgba(110, 176, 106, 0.15);
+      --warning: #E0AB4B;
+      --warning-soft: rgba(224, 171, 75, 0.15);
+      --danger: #E06C65;
+      --danger-soft: rgba(224, 108, 101, 0.15);
+      --fret-line: #3F3E38;
+      --string-line: #6F6C63;
+      --wood-bg: #201D19;
+      --inlay-color: #36322C;
+      --nut-color: #FAF9F5;
+      --dot-text: #141413;
+      --shadow-card: 0 10px 28px rgba(0, 0, 0, 0.3);
+    }
+
+    [data-theme="light"] {
+      --bg-main: #FAF9F5;
+      --bg-card: #FFFFFF;
+      --bg-elevated: #F2EFE7;
+      --bg-subtle: #F6F4EC;
+      --border-color: #E2DFD4;
+      --border-strong: #C9C5B6;
+      --text-main: #141413;
+      --text-muted: #5C5952;
+      --text-faint: #8C887E;
+      --accent: #D77757;
+      --accent-hover: #C16142;
+      --accent-soft: rgba(215, 119, 87, 0.12);
+      --accent-border: rgba(215, 119, 87, 0.48);
+      --success: #3B7E38;
+      --success-soft: rgba(59, 126, 56, 0.12);
+      --warning: #B37E1D;
+      --warning-soft: rgba(179, 126, 29, 0.12);
+      --danger: #C54B43;
+      --danger-soft: rgba(197, 75, 67, 0.12);
+      --fret-line: #D4D0C3;
+      --string-line: #9B978B;
+      --wood-bg: #EFEBE0;
+      --inlay-color: #DFDACB;
+      --nut-color: #141413;
+      --dot-text: #FAF9F5;
+      --shadow-card: 0 8px 24px rgba(20, 20, 19, 0.06);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      font-family: 'Poppins', system-ui, sans-serif;
+      transition: background-color 0.22s ease, color 0.22s ease;
+      overflow-x: hidden;
+    }
+
+    .card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-card);
+    }
+
+    .surface-subtle {
+      background-color: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+    }
+
+    .surface-elevated {
+      background-color: var(--bg-elevated);
+      border: 1px solid var(--border-color);
+    }
+
+    .text-muted { color: var(--text-muted); }
+    .text-faint { color: var(--text-faint); }
+    .text-accent { color: var(--accent); }
+    .bg-accent { background-color: var(--accent); }
+    .bg-accent-soft { background-color: var(--accent-soft); }
+    .border-accent { border-color: var(--accent-border); }
+
+    /* Custom Range Input */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 999px;
+      background: var(--border-color);
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 2px solid var(--bg-card);
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+      transition: transform 0.14s ease;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.12);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 2px solid var(--bg-card);
+      cursor: pointer;
+    }
+
+    /* Beat Pulse Lights */
+    .beat-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background-color: var(--border-strong);
+      transition: transform 0.08s ease, background-color 0.08s ease;
+    }
+    .beat-dot.active {
+      background-color: var(--accent);
+      transform: scale(1.38);
+      box-shadow: 0 0 8px var(--accent);
+    }
+    .beat-dot.accent-beat.active {
+      background-color: var(--text-main);
+      box-shadow: 0 0 10px var(--accent);
+    }
+
+    /* Measure Cards */
+    .measure-card {
+      background-color: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      transition: all 0.16s ease;
+    }
+    .measure-card:hover {
+      border-color: var(--border-strong);
+      transform: translateY(-1px);
+    }
+    .measure-card.active {
+      background-color: var(--accent-soft);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent);
+    }
+
+    /* SVG Tab Measure Boxes */
+    .tab-measure-box {
+      background-color: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      transition: border-color 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease;
+    }
+    .tab-measure-box.in-loop {
+      border-color: var(--border-strong);
+    }
+    .tab-measure-box.out-of-loop {
+      opacity: 0.42;
+    }
+    .tab-measure-box.active-measure {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent), 0 6px 18px rgba(215, 119, 87, 0.16);
+      opacity: 1;
+    }
+
+    .tab-event-group {
+      cursor: pointer;
+    }
+    .tab-event-group:hover .tab-note-pill {
+      stroke: var(--accent);
+      stroke-width: 1.8;
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar { height: 8px; width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg-subtle); border-radius: 999px; }
+    ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 999px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+    /* Toast */
+    #toast {
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+  </style>
+<style>/* Tailwind compilado (sin CDN: funciona sin internet) */
+*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:Poppins, system-ui, sans-serif;font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:JetBrains Mono, monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0, 0, 0, 0);white-space:nowrap;border-width:0}.pointer-events-none{pointer-events:none}.fixed{position:fixed}.sticky{position:sticky}.inset-0{inset:0px}.bottom-5{bottom:1.25rem}.right-5{right:1.25rem}.top-0{top:0px}.z-40{z-index:40}.z-50{z-index:50}.mx-auto{margin-left:auto;margin-right:auto}.mb-2{margin-bottom:0.5rem}.mt-1{margin-top:0.25rem}.mt-2{margin-top:0.5rem}.mt-0\.5{margin-top:0.125rem}.inline-block{display:inline-block}.inline{display:inline}.flex{display:flex}.inline-flex{display:inline-flex}.grid{display:grid}.hidden{display:none}.h-1\.5{height:0.375rem}.h-10{height:2.5rem}.h-4{height:1rem}.h-5{height:1.25rem}.h-\[320px\]{height:320px}.h-full{height:100%}.h-auto{height:auto}.max-h-\[300px\]{max-height:300px}.max-h-\[90vh\]{max-height:90vh}.min-h-screen{min-height:100vh}.w-10{width:2.5rem}.w-28{width:7rem}.w-4{width:1rem}.w-5{width:1.25rem}.w-full{width:100%}.min-w-0{min-width:0px}.min-w-\[640px\]{min-width:640px}.max-w-2xl{max-width:42rem}.max-w-3xl{max-width:48rem}.max-w-4xl{max-width:56rem}.max-w-7xl{max-width:80rem}.max-w-\[200px\]{max-width:200px}.max-w-\[240px\]{max-width:240px}.flex-1{flex:1 1 0%}.shrink-0{flex-shrink:0}.translate-y-2{--tw-translate-y:0.5rem;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.translate-y-0{--tw-translate-y:0px;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.transform{transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.cursor-pointer{cursor:pointer}.select-none{-webkit-user-select:none;user-select:none}.resize-y{resize:vertical}.list-decimal{list-style-type:decimal}.list-disc{list-style-type:disc}.grid-cols-1{grid-template-columns:repeat(1, minmax(0, 1fr))}.grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.items-start{align-items:flex-start}.items-center{align-items:center}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-1{gap:0.25rem}.gap-1\.5{gap:0.375rem}.gap-2{gap:0.5rem}.gap-2\.5{gap:0.625rem}.gap-3{gap:0.75rem}.gap-3\.5{gap:0.875rem}.gap-4{gap:1rem}.gap-5{gap:1.25rem}.gap-x-5{column-gap:1.25rem}.gap-y-2{row-gap:0.5rem}.space-y-1 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.25rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.25rem * var(--tw-space-y-reverse))}.space-y-1\.5 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.375rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.375rem * var(--tw-space-y-reverse))}.space-y-2 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.5rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.5rem * var(--tw-space-y-reverse))}.space-y-3 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.75rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.75rem * var(--tw-space-y-reverse))}.space-y-3\.5 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.875rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.875rem * var(--tw-space-y-reverse))}.space-y-4 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1rem * var(--tw-space-y-reverse))}.space-y-5 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1.25rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1.25rem * var(--tw-space-y-reverse))}.space-y-6 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1.5rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1.5rem * var(--tw-space-y-reverse))}.space-y-2\.5 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.625rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.625rem * var(--tw-space-y-reverse))}.overflow-hidden{overflow:hidden}.overflow-x-auto{overflow-x:auto}.overflow-y-auto{overflow-y:auto}.truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.whitespace-nowrap{white-space:nowrap}.rounded{border-radius:0.25rem}.rounded-2xl{border-radius:1rem}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:0.5rem}.rounded-md{border-radius:0.375rem}.rounded-xl{border-radius:0.75rem}.border{border-width:1px}.border-b{border-bottom-width:1px}.border-b-2{border-bottom-width:2px}.border-r{border-right-width:1px}.border-t{border-top-width:1px}.border-\[var\(--accent\)\]{border-color:var(--accent)}.border-transparent{border-color:transparent}.p-1{padding:0.25rem}.p-2{padding:0.5rem}.p-3{padding:0.75rem}.p-3\.5{padding:0.875rem}.p-4{padding:1rem}.p-5{padding:1.25rem}.p-2\.5{padding:0.625rem}.px-1\.5{padding-left:0.375rem;padding-right:0.375rem}.px-2{padding-left:0.5rem;padding-right:0.5rem}.px-2\.5{padding-left:0.625rem;padding-right:0.625rem}.px-3{padding-left:0.75rem;padding-right:0.75rem}.px-3\.5{padding-left:0.875rem;padding-right:0.875rem}.px-4{padding-left:1rem;padding-right:1rem}.px-5{padding-left:1.25rem;padding-right:1.25rem}.py-0\.5{padding-top:0.125rem;padding-bottom:0.125rem}.py-1{padding-top:0.25rem;padding-bottom:0.25rem}.py-1\.5{padding-top:0.375rem;padding-bottom:0.375rem}.py-2{padding-top:0.5rem;padding-bottom:0.5rem}.py-2\.5{padding-top:0.625rem;padding-bottom:0.625rem}.py-3{padding-top:0.75rem;padding-bottom:0.75rem}.py-5{padding-top:1.25rem;padding-bottom:1.25rem}.pb-1{padding-bottom:0.25rem}.pr-1{padding-right:0.25rem}.pt-0\.5{padding-top:0.125rem}.pt-3\.5{padding-top:0.875rem}.pl-4{padding-left:1rem}.text-left{text-align:left}.text-center{text-align:center}.font-mono{font-family:JetBrains Mono, monospace}.font-serif{font-family:Lora, Georgia, serif}.text-2xl{font-size:1.5rem;line-height:2rem}.text-\[10px\]{font-size:10px}.text-\[11px\]{font-size:11px}.text-base{font-size:1rem;line-height:1.5rem}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:0.875rem;line-height:1.25rem}.text-xl{font-size:1.25rem;line-height:1.75rem}.text-xs{font-size:0.75rem;line-height:1rem}.text-\[9\.5px\]{font-size:9.5px}.font-bold{font-weight:700}.font-medium{font-weight:500}.font-semibold{font-weight:600}.uppercase{text-transform:uppercase}.italic{font-style:italic}.leading-none{line-height:1}.leading-relaxed{line-height:1.625}.leading-tight{line-height:1.25}.tracking-wider{letter-spacing:0.05em}.tracking-widest{letter-spacing:0.1em}.text-\[\#141413\]{--tw-text-opacity:1;color:rgb(20 20 19 / var(--tw-text-opacity, 1))}.text-\[var\(--accent\)\]{color:var(--accent)}.text-\[var\(--text-main\)\]{color:var(--text-main)}.antialiased{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}.accent-\[\#D77757\]{accent-color:#D77757}.opacity-0{opacity:0}.opacity-30{opacity:0.3}.opacity-100{opacity:1}.shadow-lg{--tw-shadow:0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-sm{--tw-shadow:0 1px 2px 0 rgb(0 0 0 / 0.05);--tw-shadow-colored:0 1px 2px 0 var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.outline-none{outline:2px solid transparent;outline-offset:2px}.ring{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(3px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000)}.filter{filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.backdrop-blur-md{--tw-backdrop-blur:blur(12px);-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.transition-all{transition-property:all;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.transition-colors{transition-property:color, background-color, border-color, fill, stroke, -webkit-text-decoration-color;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, -webkit-text-decoration-color;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.transition-transform{transition-property:transform;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.duration-300{transition-duration:300ms}.selection\:bg-\[\#D77757\]\/30 *::selection{background-color:rgb(215 119 87 / 0.3)}.selection\:bg-\[\#D77757\]\/30::selection{background-color:rgb(215 119 87 / 0.3)}.hover\:scale-\[1\.02\]:hover{--tw-scale-x:1.02;--tw-scale-y:1.02;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.hover\:border-\[var\(--accent\)\]:hover{border-color:var(--accent)}.hover\:border-\[var\(--border-strong\)\]:hover{border-color:var(--border-strong)}.hover\:bg-\[var\(--accent\)\]:hover{background-color:var(--accent)}.hover\:bg-\[var\(--accent-soft\)\]:hover{background-color:var(--accent-soft)}.hover\:text-\[\#141413\]:hover{--tw-text-opacity:1;color:rgb(20 20 19 / var(--tw-text-opacity, 1))}.hover\:text-\[var\(--danger\)\]:hover{color:var(--danger)}.hover\:text-\[var\(--text-main\)\]:hover{color:var(--text-main)}.hover\:opacity-95:hover{opacity:0.95}.focus\:border-\[var\(--accent\)\]:focus{border-color:var(--accent)}@media (min-width: 640px){.sm\:inline{display:inline}.sm\:hidden{display:none}.sm\:h-\[380px\]{height:380px}.sm\:w-auto{width:auto}.sm\:max-w-\[240px\]{max-width:240px}.sm\:flex-none{flex:none}.sm\:grid-cols-3{grid-template-columns:repeat(3, minmax(0, 1fr))}.sm\:flex-row{flex-direction:row}.sm\:items-start{align-items:flex-start}.sm\:items-center{align-items:center}.sm\:gap-2{gap:0.5rem}.sm\:gap-2\.5{gap:0.625rem}.sm\:p-5{padding:1.25rem}.sm\:p-6{padding:1.5rem}.sm\:px-5{padding-left:1.25rem;padding-right:1.25rem}.sm\:px-6{padding-left:1.5rem;padding-right:1.5rem}.sm\:text-left{text-align:left}.sm\:text-right{text-align:right}.sm\:text-2xl{font-size:1.5rem;line-height:2rem}.sm\:text-3xl{font-size:1.875rem;line-height:2.25rem}.sm\:text-lg{font-size:1.125rem;line-height:1.75rem}.sm\:text-sm{font-size:0.875rem;line-height:1.25rem}.sm\:text-xl{font-size:1.25rem;line-height:1.75rem}}@media (min-width: 768px){.md\:col-span-5{grid-column:span 5 / span 5}.md\:col-span-7{grid-column:span 7 / span 7}.md\:flex{display:flex}.md\:hidden{display:none}.md\:grid-cols-12{grid-template-columns:repeat(12, minmax(0, 1fr))}.md\:grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.md\:grid-cols-4{grid-template-columns:repeat(4, minmax(0, 1fr))}}@media (min-width: 1024px){.lg\:col-span-3{grid-column:span 3 / span 3}.lg\:col-span-9{grid-column:span 9 / span 9}.lg\:inline{display:inline}.lg\:max-h-\[680px\]{max-height:680px}.lg\:grid-cols-12{grid-template-columns:repeat(12, minmax(0, 1fr))}.lg\:grid-cols-3{grid-template-columns:repeat(3, minmax(0, 1fr))}}@media (min-width: 1280px){.xl\:grid-cols-3{grid-template-columns:repeat(3, minmax(0, 1fr))}}
+</style>
+</head>
+<body class="min-h-screen antialiased selection:bg-[#D77757]/30">
+
+  <!-- ============================================================
+       TOP NAVIGATION BAR (SONG SELECTOR, JSON STUDIO, THEME)
+       ============================================================ -->
+  <header class="sticky top-0 z-40 backdrop-blur-md border-b" style="background-color: color-mix(in srgb, var(--bg-main) 90%, transparent); border-color: var(--border-color);">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+      <!-- Brand + Active Song Title -->
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-accent-soft border border-accent shrink-0">
+          <svg class="w-5 h-5 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 21c-4.5-3.2-8-8.2-8-13a8 8 0 0 1 16 0c0 4.8-3.5 9.8-8 13Z"/>
+            <path d="M9.5 9.5h5"/>
+            <path d="M10.5 13h3"/>
+          </svg>
+        </div>
+        <div class="min-w-0">
+          <div class="flex items-center gap-2">
+            <span class="font-mono text-[10px] uppercase tracking-widest text-accent font-semibold">GuitarLab Studio</span>
+            <span id="header-tuning" class="font-mono text-[10px] px-1.5 py-0.5 rounded surface-elevated text-muted">EADGBE</span>
+          </div>
+          <h1 id="header-song-title" class="font-serif text-base sm:text-lg font-semibold leading-tight truncate">
+            Cantata de puentes amarillos
+          </h1>
+        </div>
+      </div>
+
+      <!-- Right Controls: Song Library Selector, JSON Editor Button, Theme Toggle -->
+      <div class="flex items-center gap-2 sm:gap-2.5 flex-wrap">
+        <!-- Song Selector -->
+        <div class="flex items-center gap-1.5">
+          <label for="song-selector" class="sr-only">Seleccionar canción</label>
+          <select id="song-selector"
+            class="text-xs font-medium px-3 py-2 rounded-xl surface-elevated cursor-pointer outline-none focus:border-[var(--accent)] max-w-[200px] sm:max-w-[240px]">
+            <!-- Populated from SONG_LIBRARY -->
+          </select>
+        </div>
+
+        <!-- Adapt / New Song JSON Modal Trigger -->
+        <button id="btn-open-json" type="button"
+          class="px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer bg-accent-soft text-accent border border-accent hover:bg-[var(--accent)] hover:text-[#141413] transition-colors">
+          <span class="font-mono">{ }</span>
+          <span class="hidden sm:inline">Adaptar / Nueva Canción (JSON)</span>
+          <span class="sm:hidden">JSON</span>
+        </button>
+
+        <!-- Theme Toggle -->
+        <button id="btn-theme" type="button" aria-label="Cambiar tema"
+          class="p-2 rounded-xl surface-elevated hover:border-[var(--accent)] transition-colors flex items-center gap-1.5 text-xs font-medium cursor-pointer">
+          <span id="theme-icon">☀️</span>
+          <span class="hidden lg:inline" id="theme-label">Claro</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Section Tabs + Global Progress Bar -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between gap-4 overflow-x-auto">
+      <nav class="flex items-center gap-1 sm:gap-2">
+        <button type="button" data-tab="practice" class="nav-tab px-3.5 py-2.5 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap cursor-pointer border-[var(--accent)] text-[var(--accent)]">
+          1. Práctica Sincronizada
+        </button>
+        <button type="button" data-tab="lab" class="nav-tab px-3.5 py-2.5 text-xs sm:text-sm font-medium border-b-2 border-transparent text-muted hover:text-[var(--text-main)] transition-colors whitespace-nowrap cursor-pointer">
+          2. Laboratorio de Acordes Especiales
+        </button>
+        <button type="button" data-tab="guide" class="nav-tab px-3.5 py-2.5 text-xs sm:text-sm font-medium border-b-2 border-transparent text-muted hover:text-[var(--text-main)] transition-colors whitespace-nowrap cursor-pointer">
+          3. Guía de Progreso y Técnica
+        </button>
+      </nav>
+
+      <div class="hidden md:flex items-center gap-2.5 shrink-0 pb-1">
+        <span class="text-[11px] text-muted">Dominio:</span>
+        <div class="w-28 h-1.5 rounded-full overflow-hidden" style="background-color: var(--border-color);">
+          <div id="global-progress-bar" class="h-full rounded-full transition-all duration-300" style="width: 0%; background-color: var(--accent);"></div>
+        </div>
+        <span id="global-progress-text" class="font-mono text-[11px] font-semibold text-accent">0/9</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================================================
+       MAIN WORKSPACE
+       ============================================================ -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-5 space-y-6">
+
+    <!-- ==========================================================
+         TAB 1: PRÁCTICA SINCRONIZADA
+         ========================================================== -->
+    <section id="tab-practice" class="space-y-5">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+
+        <!-- LEFT SIDEBAR: SONG BLOCKS / SECTIONS -->
+        <aside class="lg:col-span-3 card rounded-2xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="font-serif text-base font-semibold">Bloques de Estudio</h2>
+              <p id="song-artist-meta" class="text-[11px] text-muted">Luis Alberto Spinetta</p>
+            </div>
+            <span id="mobile-progress-text" class="md:hidden font-mono text-xs text-accent font-semibold">0/9</span>
+          </div>
+          <div id="section-list" class="space-y-1.5 max-h-[300px] lg:max-h-[680px] overflow-y-auto pr-1">
+            <!-- Populated dynamically -->
+          </div>
+        </aside>
+
+        <!-- RIGHT STUDIO: TRANSPORT + TAB/FRETBOARD OR CHORDS + COACH -->
+        <div class="lg:col-span-9 space-y-5">
+
+          <!-- HEADER + TRANSPORT + SPEED ENGINE -->
+          <div class="card rounded-2xl p-4 sm:p-5 space-y-4">
+            <!-- Section Info + Beginner/Original Toggle -->
+            <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+              <div class="space-y-1">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span id="sec-level-badge" class="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-accent-soft text-accent border border-accent">Nivel 4</span>
+                  <span id="sec-meter-badge" class="text-[10px] font-mono px-2 py-0.5 rounded-full surface-elevated text-muted">4/4</span>
+                  <span id="sec-measures-badge" class="text-[10px] font-mono px-2 py-0.5 rounded-full surface-elevated text-muted">Compases 1–15</span>
+                  <span id="sec-bpm-badge" class="text-[10px] font-mono text-faint">Base: 102 BPM</span>
+                </div>
+                <h2 id="sec-title" class="font-serif text-xl sm:text-2xl font-semibold">Intro — Melodía milimétrica (Compases 1 al 15)</h2>
+                <p id="sec-desc" class="text-xs sm:text-sm text-muted leading-relaxed"></p>
+              </div>
+
+              <!-- Beginner vs Original Toggle -->
+              <div class="shrink-0">
+                <div class="p-1 rounded-xl surface-elevated inline-flex items-center gap-1 w-full sm:w-auto">
+                  <button id="btn-mode-beg" type="button" class="flex-1 sm:flex-none px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer bg-accent text-[#141413]">
+                    Principiante
+                  </button>
+                  <button id="btn-mode-orig" type="button" class="flex-1 sm:flex-none px-3 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer text-muted hover:text-[var(--text-main)]">
+                    Original
+                  </button>
+                </div>
+                <p id="mode-helper" class="text-[10px] text-muted mt-1 sm:text-right">Pull-offs opcionales + acordes fáciles</p>
+              </div>
+            </div>
+
+            <!-- Transport Controls -->
+            <div class="pt-3.5 border-t space-y-3.5" style="border-color: var(--border-color);">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <button id="btn-play" type="button"
+                    class="px-5 py-2.5 rounded-xl font-semibold text-sm flex items-center gap-2 transition-all cursor-pointer bg-accent text-[#141413] hover:opacity-95 shadow-sm">
+                    <span id="play-icon">▶</span>
+                    <span id="play-label">Reproducir</span>
+                  </button>
+
+                  <button id="btn-restart" type="button" title="Reiniciar al inicio del bucle"
+                    class="px-3 py-2.5 rounded-xl surface-elevated hover:border-[var(--accent)] text-sm transition-colors cursor-pointer">
+                    ↺
+                  </button>
+
+                  <div class="flex items-center rounded-xl surface-elevated overflow-hidden">
+                    <button id="btn-prev" type="button" class="px-3 py-2.5 text-xs font-medium hover:bg-[var(--accent-soft)] transition-colors cursor-pointer border-r" style="border-color: var(--border-color);">
+                      ◀ Compás
+                    </button>
+                    <button id="btn-next" type="button" class="px-3 py-2.5 text-xs font-medium hover:bg-[var(--accent-soft)] transition-colors cursor-pointer">
+                      Compás ▶
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Live Beat Indicator & Measure Counter -->
+                <div class="flex items-center gap-3 px-3.5 py-2 rounded-xl surface-subtle">
+                  <span id="live-measure-badge" class="font-mono text-xs font-semibold text-accent">C.1</span>
+                  <span class="opacity-30">|</span>
+                  <span id="status-badge" class="font-mono text-xs text-muted">Listo</span>
+                  <div id="master-beats" class="flex items-center gap-1.5">
+                    <span class="beat-dot accent-beat"></span>
+                    <span class="beat-dot"></span>
+                    <span class="beat-dot"></span>
+                    <span class="beat-dot"></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Speed Control + Presets + Audio Toggles -->
+              <div class="p-3.5 rounded-xl surface-subtle space-y-3">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-medium text-muted">Velocidad:</span>
+                    <span id="speed-display" class="font-mono text-sm font-bold text-accent">55% · 56 BPM</span>
+                  </div>
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <button type="button" data-speed="35" class="speed-preset px-2.5 py-1 rounded-lg text-[11px] font-mono surface-elevated hover:border-[var(--accent)] cursor-pointer">35% Tortuga</button>
+                    <button type="button" data-speed="55" class="speed-preset px-2.5 py-1 rounded-lg text-[11px] font-mono surface-elevated hover:border-[var(--accent)] cursor-pointer">55% Precisión</button>
+                    <button type="button" data-speed="75" class="speed-preset px-2.5 py-1 rounded-lg text-[11px] font-mono surface-elevated hover:border-[var(--accent)] cursor-pointer">75% Fluido</button>
+                    <button type="button" data-speed="100" class="speed-preset px-2.5 py-1 rounded-lg text-[11px] font-mono surface-elevated hover:border-[var(--accent)] cursor-pointer">100% Original</button>
+                  </div>
+                </div>
+
+                <input id="speed-slider" type="range" min="30" max="100" step="1" value="55" />
+
+                <div class="flex flex-wrap items-center gap-x-5 gap-y-2 pt-0.5 text-xs">
+                  <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+                    <input id="chk-countin" type="checkbox" checked class="accent-[#D77757] w-4 h-4 rounded cursor-pointer" />
+                    <span>Cuenta regresiva (1 compás)</span>
+                  </label>
+                  <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+                    <input id="chk-metronome" type="checkbox" checked class="accent-[#D77757] w-4 h-4 rounded cursor-pointer" />
+                    <span>Metrónomo</span>
+                  </label>
+                  <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+                    <input id="chk-guitar" type="checkbox" checked class="accent-[#D77757] w-4 h-4 rounded cursor-pointer" />
+                    <span>Guitarra Guía</span>
+                  </label>
+                  <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+                    <input id="chk-autospeed" type="checkbox" class="accent-[#D77757] w-4 h-4 rounded cursor-pointer" />
+                    <span class="text-accent font-medium">Auto-Acelerar (+5% / 2 vueltas)</span>
+                    <span id="autospeed-badge" class="hidden font-mono text-[10px] px-2 py-0.5 rounded-full bg-accent-soft text-accent">Vuelta 1/2</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ======================================================
+               TABLATURE & LIVE FRETBOARD WORKSPACE (FOR TAB / HYBRID)
+               ====================================================== -->
+          <div id="tab-workspace" class="hidden space-y-5">
+
+            <!-- A-B Loop Selector Card -->
+            <div class="card rounded-2xl p-4 space-y-3">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                  <span class="font-mono text-xs uppercase tracking-wider text-accent font-semibold">Bucle A–B por Compases</span>
+                  <span id="loop-range-pill" class="font-mono text-[11px] px-2 py-0.5 rounded-md surface-elevated text-muted">C.1 → C.15</span>
+                </div>
+                <div class="flex items-center gap-2 text-xs">
+                  <label class="flex items-center gap-1 text-muted">
+                    <span>Inicio:</span>
+                    <select id="loop-start-select" class="font-mono text-xs px-2 py-1 rounded-lg surface-elevated cursor-pointer outline-none"></select>
+                  </label>
+                  <label class="flex items-center gap-1 text-muted">
+                    <span>Fin:</span>
+                    <select id="loop-end-select" class="font-mono text-xs px-2 py-1 rounded-lg surface-elevated cursor-pointer outline-none"></select>
+                  </label>
+                </div>
+              </div>
+              <div id="loop-presets" class="flex flex-wrap gap-1.5">
+                <!-- Dynamic presets for active tab section -->
+              </div>
+            </div>
+
+            <!-- Live Interactive Fretboard Visualizer (Frets 0–14) -->
+            <div class="card rounded-2xl p-4 sm:p-5 space-y-3">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h3 class="font-serif text-base font-semibold">Mástil Interactivo en Vivo (Trastes 0–14)</h3>
+                  <p class="text-[11px] text-muted">Ilumina cuerda, traste, nota y dedo sugerido (1–4) al reproducir o al hacer clic en cualquier nota de la tablatura.</p>
+                </div>
+                <div id="fretboard-active-info" class="font-mono text-xs px-3 py-1.5 rounded-xl bg-accent-soft text-accent border border-accent">
+                  Clic en una nota o pulsa ▶
+                </div>
+              </div>
+              <div id="fretboard-svg-wrap" class="w-full overflow-x-auto pb-1">
+                <!-- Live SVG Fretboard rendered here -->
+              </div>
+            </div>
+
+            <!-- Interactive 6-String Multi-Measure SVG Tablature -->
+            <div class="card rounded-2xl p-4 sm:p-5 space-y-3">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h3 class="font-serif text-base font-semibold">Tablatura SVG Milimétrica (Nota por Nota)</h3>
+                  <p class="text-[11px] text-muted">
+                    Leyenda: <span class="font-mono text-accent">p</span> pull-off ·
+                    <span class="font-mono text-accent">•</span> staccato ·
+                    <span class="font-mono text-accent">〰</span> arpegio ·
+                    <span class="font-mono text-accent">↓/↑</span> púa ·
+                    <span class="font-mono text-accent">d1–4</span> dedo mano izq.
+                  </p>
+                </div>
+                <span class="text-[11px] text-faint font-mono">Haz clic en cualquier nota o compás</span>
+              </div>
+
+              <!-- Grid of SVG Measures (All 15 measures of Intro!) -->
+              <div id="tab-measures-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                <!-- Rendered dynamically as SVG boxes -->
+              </div>
+            </div>
+          </div>
+
+          <!-- ======================================================
+               CHORDS & TIMELINE WORKSPACE (FOR CHORDS / HYBRID)
+               ====================================================== -->
+          <div id="chords-workspace" class="hidden space-y-5">
+
+            <!-- Clickable Measure Timeline -->
+            <div class="card rounded-2xl p-4 sm:p-5 space-y-3">
+              <div class="flex items-center justify-between gap-2">
+                <h3 class="font-serif text-base font-semibold">Línea de Tiempo Sincronizada</h3>
+                <span class="text-[11px] text-muted">Haz clic en cualquier compás para saltar y escuchar</span>
+              </div>
+              <div id="chord-timeline" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+                <!-- Rendered dynamically -->
+              </div>
+            </div>
+
+            <!-- Dual Chord SVG Visualizer (Current + Next) -->
+            <div class="card rounded-2xl p-4 sm:p-5">
+              <div class="grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
+                <!-- Current Chord -->
+                <div class="md:col-span-7 flex flex-col items-center p-4 rounded-2xl surface-subtle">
+                  <div class="w-full flex items-center justify-between mb-2">
+                    <span class="text-[11px] font-mono uppercase tracking-wider text-accent font-semibold">Acorde Actual</span>
+                    <div class="flex items-center gap-1.5">
+                      <button id="btn-arp-current" type="button" class="text-[11px] px-2.5 py-1 rounded-lg surface-elevated hover:border-[var(--accent)] cursor-pointer">Arpegio</button>
+                      <button id="btn-strum-current" type="button" class="text-[11px] px-2.5 py-1 rounded-lg surface-elevated hover:border-[var(--accent)] cursor-pointer">🔊 Rasgueo</button>
+                    </div>
+                  </div>
+                  <div class="flex flex-col sm:flex-row items-center gap-4 w-full justify-center">
+                    <div id="cur-chord-svg" class="cursor-pointer transition-transform hover:scale-[1.02]"></div>
+                    <div class="space-y-1.5 text-center sm:text-left max-w-[240px]">
+                      <h4 id="cur-chord-name" class="font-serif text-2xl sm:text-3xl font-bold leading-none">A</h4>
+                      <p id="cur-chord-formula" class="font-mono text-xs text-muted">x-0-2-2-2-0</p>
+                      <span id="cur-chord-badge" class="inline-block text-[10px] px-2 py-0.5 rounded-md bg-accent-soft text-accent font-medium">Principiante</span>
+                      <p id="cur-chord-note" class="text-xs text-muted leading-relaxed"></p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Next Chord -->
+                <div class="md:col-span-5 flex flex-col items-center p-4 rounded-2xl surface-subtle">
+                  <div class="w-full flex items-center justify-between mb-2">
+                    <span class="text-[11px] font-mono uppercase tracking-wider text-muted">Próximo acorde:</span>
+                    <button id="btn-strum-next" type="button" class="text-[11px] px-2 py-0.5 rounded-lg surface-elevated hover:border-[var(--accent)] cursor-pointer">🔊</button>
+                  </div>
+                  <div id="next-chord-svg" class="cursor-pointer transition-transform hover:scale-[1.02]"></div>
+                  <div class="mt-2 text-center">
+                    <h4 id="next-chord-name" class="font-serif text-lg font-semibold">D/F#</h4>
+                    <p id="next-chord-formula" class="font-mono text-[11px] text-muted">2-x-0-2-3-2</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ======================================================
+               SMART CONTEXTUAL COACH (WORKS FOR BOTH TABS & CHORDS)
+               ====================================================== -->
+          <div class="p-4 sm:p-5 rounded-2xl border flex items-start gap-3.5" style="background-color: var(--accent-soft); border-color: var(--accent-border);">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-lg" style="background-color: var(--bg-card); border: 1px solid var(--accent-border);">
+              🎯
+            </div>
+            <div class="space-y-1 flex-1">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-xs font-mono uppercase tracking-wider font-semibold text-accent">Coach Técnico en Vivo</span>
+                <span id="coach-tag" class="text-xs font-mono px-2 py-0.5 rounded-md surface-elevated">Compás 1</span>
+              </div>
+              <p id="coach-text" class="text-xs sm:text-sm leading-relaxed"></p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================================
+         TAB 2: LABORATORIO DE ACORDES ESPECIALES
+         ========================================================== -->
+    <section id="tab-lab" class="hidden space-y-5">
+      <div class="card rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="space-y-1 max-w-2xl">
+          <span class="font-mono text-xs uppercase tracking-wider text-accent">Vocabulario Armónico</span>
+          <h2 class="font-serif text-2xl font-semibold">Laboratorio de Acordes Especiales</h2>
+          <p class="text-sm text-muted">
+            Domina las posturas clave de la canción sin la presión del metrónomo. Escucha cada acorde <strong>arpegiado</strong> (para verificar que cada cuerda suene limpia) o <strong>rasgueado</strong>, y compara la versión Original con la Principiante.
+          </p>
+        </div>
+        <div id="lab-count-badge" class="shrink-0 font-mono text-xs px-3.5 py-2 rounded-xl surface-subtle text-muted">
+          11 acordes especiales
+        </div>
+      </div>
+      <div id="lab-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+        <!-- Populated dynamically from active song -->
+      </div>
+    </section>
+
+    <!-- ==========================================================
+         TAB 3: GUÍA DE PROGRESO Y TÉCNICA
+         ========================================================== -->
+    <section id="tab-guide" class="hidden space-y-5">
+      <div class="card rounded-2xl p-5 sm:p-6 space-y-2">
+        <span class="font-mono text-xs uppercase tracking-wider text-accent">Hoja de Ruta y Metodología</span>
+        <h2 id="guide-title" class="font-serif text-2xl font-semibold">Plan de Progreso Paso a Paso</h2>
+        <p id="guide-intro" class="text-sm text-muted max-w-3xl leading-relaxed"></p>
+      </div>
+
+      <!-- 4 Stages Grid -->
+      <div id="guide-stages" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <!-- Populated dynamically -->
+      </div>
+
+      <!-- Technique Cards -->
+      <div id="guide-techniques" class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <!-- Populated dynamically -->
+      </div>
+    </section>
+  </main>
+
+  <!-- ============================================================
+       MODAL: ADAPTAR / NUEVA CANCIÓN (JSON STUDIO)
+       ============================================================ -->
+  <div id="json-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background-color: rgba(10, 10, 9, 0.76); backdrop-filter: blur(4px);">
+    <div class="card rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+      <!-- Modal Header -->
+      <div class="p-4 sm:p-5 border-b flex items-center justify-between gap-3" style="border-color: var(--border-color);">
+        <div>
+          <span class="font-mono text-[10px] uppercase tracking-widest text-accent font-semibold">Arquitectura Modular JSON</span>
+          <h3 class="font-serif text-lg sm:text-xl font-semibold">Adaptar / Cargar Nueva Canción</h3>
+        </div>
+        <button id="btn-close-json" type="button" class="p-2 rounded-xl surface-elevated hover:border-[var(--accent)] cursor-pointer text-sm">✕</button>
+      </div>
+
+      <!-- Modal Toolbar -->
+      <div class="px-4 sm:px-5 py-3 border-b flex flex-wrap items-center justify-between gap-2 surface-subtle" style="border-color: var(--border-color);">
+        <div class="flex flex-wrap items-center gap-2">
+          <button id="btn-json-current" type="button" class="px-3 py-1.5 rounded-lg text-xs font-medium surface-elevated hover:border-[var(--accent)] cursor-pointer">
+            Ver JSON actual
+          </button>
+          <button id="btn-json-template" type="button" class="px-3 py-1.5 rounded-lg text-xs font-medium surface-elevated hover:border-[var(--accent)] cursor-pointer">
+            Cargar plantilla vacía
+          </button>
+          <button id="btn-json-copy" type="button" class="px-3 py-1.5 rounded-lg text-xs font-medium surface-elevated hover:border-[var(--accent)] cursor-pointer">
+            📋 Copiar JSON
+          </button>
+          <button id="btn-json-download" type="button" class="px-3 py-1.5 rounded-lg text-xs font-medium surface-elevated hover:border-[var(--accent)] cursor-pointer">
+            ⬇ Descargar .json
+          </button>
+        </div>
+        <label class="inline-flex items-center gap-2 text-xs cursor-pointer">
+          <input id="chk-json-save-local" type="checkbox" checked class="accent-[#D77757] w-4 h-4 rounded cursor-pointer" />
+          <span>Guardar en navegador</span>
+        </label>
+      </div>
+
+      <!-- JSON Editor Area -->
+      <div class="p-4 sm:p-5 flex-1 overflow-y-auto space-y-3">
+        <p class="text-xs text-muted leading-relaxed">
+          Edita la canción actual o pega el JSON de cualquier otra canción siguiendo la estructura de <code class="font-mono text-accent">sections</code> (tipos <code class="font-mono">"tab"</code>, <code class="font-mono">"chords"</code> o <code class="font-mono">"hybrid"</code>), <code class="font-mono text-accent">chords</code> y <code class="font-mono text-accent">specialChords</code>. Al aplicar, todo el motor (audio, SVG, mástil y laboratorio) se adapta en vivo.
+        </p>
+
+        <div id="json-error-box" class="hidden p-3 rounded-xl text-xs font-mono border" style="background-color: var(--danger-soft); border-color: var(--danger); color: var(--danger);"></div>
+
+        <textarea id="json-editor" spellcheck="false"
+          class="w-full h-[320px] sm:h-[380px] p-3.5 rounded-xl font-mono text-xs leading-relaxed outline-none resize-y surface-subtle border focus:border-[var(--accent)]"
+          style="color: var(--text-main);"></textarea>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-4 sm:p-5 border-t flex flex-wrap items-center justify-between gap-3" style="border-color: var(--border-color);">
+        <button id="btn-json-reset-custom" type="button" class="text-xs text-muted hover:text-[var(--danger)] cursor-pointer">
+          Borrar canciones guardadas en navegador
+        </button>
+        <div class="flex items-center gap-2">
+          <button id="btn-cancel-json" type="button" class="px-4 py-2 rounded-xl text-xs font-medium surface-elevated cursor-pointer">
+            Cancelar
+          </button>
+          <button id="btn-apply-json" type="button" class="px-5 py-2 rounded-xl text-xs font-semibold bg-accent text-[#141413] hover:opacity-95 cursor-pointer">
+            ✓ Validar y Aplicar al Motor
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Feedback -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 px-4 py-2.5 rounded-xl text-xs font-medium pointer-events-none opacity-0 translate-y-2 shadow-lg"
+       style="background-color: var(--bg-elevated); border: 1px solid var(--accent-border); color: var(--text-main);">
+  </div>
+
+  <!-- ============================================================
+       APPLICATION SCRIPT:
+       PART A — SONG_LIBRARY (CLEAN REUSABLE JSON DATA LAYER)
+       PART B — GUITARLAB ENGINE (AUDIO, SVG, FRETBOARD, UI)
+       ============================================================ -->
+  <script>
+    (() => {
+      'use strict';
+
+      /* =====================================================================
+         PART A: SONG DATA LAYER (SONG_LIBRARY)
+         Strict separation from Engine. Any valid song object following this
+         schema can be loaded, edited, exported, or imported at runtime.
+         ===================================================================== */
+
+      // Helper to construct the exact 15-measure Intro of Cantata de puentes amarillos
+      function buildCantataIntroMeasures() {
+        const m1 = (num, tip) => ({
+          num,
+          beats: 4,
+          coachTip: tip,
+          events: [
+            { beat: 0.0,  dur: 0.5,  notes: [{ s: 6, f: 9,  finger: 1 }], pick: 'D' },
+            { beat: 0.5,  dur: 0.5,  notes: [{ s: 6, f: 10, finger: 2 }], pick: 'U' },
+            { beat: 1.0,  dur: 0.5,  notes: [{ s: 6, f: 12, finger: 4 }], pick: 'D' },
+            { beat: 1.5,  dur: 0.25, notes: [{ s: 5, f: 9,  finger: 1 }], pick: 'U' },
+            { beat: 1.75, dur: 0.25, notes: [{ s: 5, f: 11, finger: 3 }], pick: 'D' },
+            { beat: 2.0,  dur: 2.0,  notes: [{ s: 5, f: 9,  finger: 1 }], pick: 'U', tech: 'tie' }
+          ]
+        });
+
+        const m5 = (num, tip) => ({
+          num,
+          beats: 4,
+          coachTip: tip,
+          events: [
+            { beat: 0.0,  dur: 0.5,  notes: [{ s: 5, f: 9,  finger: 1 }], pick: 'D' },
+            { beat: 0.5,  dur: 0.5,  notes: [{ s: 5, f: 11, finger: 3 }], pick: 'U' },
+            { beat: 1.0,  dur: 0.5,  notes: [{ s: 5, f: 12, finger: 4 }], pick: 'D' },
+            { beat: 1.5,  dur: 0.25, notes: [{ s: 4, f: 9,  finger: 1 }], pick: 'U' },
+            { beat: 1.75, dur: 0.25, notes: [{ s: 4, f: 11, finger: 3 }], pick: 'D' },
+            { beat: 2.0,  dur: 2.0,  notes: [{ s: 4, f: 9,  finger: 1 }], pick: 'U', tech: 'tie' }
+          ]
+        });
+
+        const m9 = (num, tip) => ({
+          num,
+          beats: 4,
+          coachTip: tip,
+          events: [
+            { beat: 0.0, dur: 0.5, notes: [{ s: 4, f: 11, finger: 3 }], pick: 'D', tech: 'staccato' },
+            { beat: 0.5, dur: 0.5, notes: [{ s: 4, f: 12, finger: 4 }], pick: 'U', tech: 'staccato' },
+            { beat: 1.0, dur: 0.5, notes: [{ s: 3, f: 9,  finger: 1 }], pick: 'D', tech: 'staccato' },
+            { beat: 1.5, dur: 0.5, notes: [{ s: 3, f: 11, finger: 3 }], pick: 'U', tech: 'staccato' },
+            { beat: 2.0, dur: 0.5, notes: [{ s: 2, f: 10, finger: 2 }], pick: 'D', tech: 'pull-off' },
+            { beat: 2.5, dur: 0.5, notes: [{ s: 2, f: 9,  finger: 1 }], pick: '',  tech: 'pull-off-target' },
+            { beat: 3.0, dur: 1.0, notes: [{ s: 1, f: 9,  finger: 1 }], pick: 'D' }
+          ]
+        });
+
+        return [
+          m1(1, 'Bloque 1 (Posición fija IX): asigna 1 dedo por traste (1→traste 9, 2→10, 3→11, 4→12). En las dos semicorcheas rápidas (pulsos 1.5 y 1.75) mantén la púa alternada (↑ ↓) y deja vibrar la blanca final.'),
+          m1(2, 'Repetición exacta del Compás 1. Aprovecha los 2 tiempos sostenidos en s5:9 (Fa#) para relajar el hombro y preparar el siguiente compás.'),
+          {
+            num: 3,
+            beats: 4,
+            coachTip: 'Atención al pulso 3: aquí la nota s5:9 dura solo 1 negra y luego sube al traste 12 (dedo 4) y baja al 11 (dedo 3). No muevas la mano de la posición IX.',
+            events: [
+              { beat: 0.0,  dur: 0.5,  notes: [{ s: 6, f: 9,  finger: 1 }], pick: 'D' },
+              { beat: 0.5,  dur: 0.5,  notes: [{ s: 6, f: 10, finger: 2 }], pick: 'U' },
+              { beat: 1.0,  dur: 0.5,  notes: [{ s: 6, f: 12, finger: 4 }], pick: 'D' },
+              { beat: 1.5,  dur: 0.25, notes: [{ s: 5, f: 9,  finger: 1 }], pick: 'U' },
+              { beat: 1.75, dur: 0.25, notes: [{ s: 5, f: 11, finger: 3 }], pick: 'D' },
+              { beat: 2.0,  dur: 1.0,  notes: [{ s: 5, f: 9,  finger: 1 }], pick: 'U' },
+              { beat: 3.0,  dur: 0.5,  notes: [{ s: 5, f: 12, finger: 4 }], pick: 'D' },
+              { beat: 3.5,  dur: 0.5,  notes: [{ s: 5, f: 11, finger: 3 }], pick: 'U' }
+            ]
+          },
+          {
+            num: 4,
+            beats: 4,
+            coachTip: 'Cierre del Bloque 1: s5:9 → s5:12 → s5:11 sostenido durante 3 tiempos completos (negra ligada a blanca). Deja respirar el vibrato natural antes de subir a las cuerdas 5 y 4.',
+            events: [
+              { beat: 0.0, dur: 0.5, notes: [{ s: 5, f: 9,  finger: 1 }], pick: 'D' },
+              { beat: 0.5, dur: 0.5, notes: [{ s: 5, f: 12, finger: 4 }], pick: 'U' },
+              { beat: 1.0, dur: 3.0, notes: [{ s: 5, f: 11, finger: 3 }], pick: 'D', tech: 'tie' }
+            ]
+          },
+          m5(5, 'Bloque 2 (Una 4ª arriba en cuerdas 5 y 4): sigue en posición IX. ¡Ojo! Ahora la segunda nota es traste 11 con dedo 3 (no 10 como en la 6ª cuerda).'),
+          m5(6, 'Repetición exacta del Compás 5. Mantén los dedos cerca del diapasón para que las semicorcheas en s4:9 y s4:11 salgan cristalinas.'),
+          {
+            num: 7,
+            beats: 4,
+            coachTip: 'Misma variación rítmica que el Compás 3, ahora en cuerdas 5 y 4: corta el s4:9 a 1 tiempo y remata en s4:12 (dedo 4) → s4:11 (dedo 3).',
+            events: [
+              { beat: 0.0,  dur: 0.5,  notes: [{ s: 5, f: 9,  finger: 1 }], pick: 'D' },
+              { beat: 0.5,  dur: 0.5,  notes: [{ s: 5, f: 11, finger: 3 }], pick: 'U' },
+              { beat: 1.0,  dur: 0.5,  notes: [{ s: 5, f: 12, finger: 4 }], pick: 'D' },
+              { beat: 1.5,  dur: 0.25, notes: [{ s: 4, f: 9,  finger: 1 }], pick: 'U' },
+              { beat: 1.75, dur: 0.25, notes: [{ s: 4, f: 11, finger: 3 }], pick: 'D' },
+              { beat: 2.0,  dur: 1.0,  notes: [{ s: 4, f: 9,  finger: 1 }], pick: 'U' },
+              { beat: 3.0,  dur: 0.5,  notes: [{ s: 4, f: 12, finger: 4 }], pick: 'D' },
+              { beat: 3.5,  dur: 0.5,  notes: [{ s: 4, f: 11, finger: 3 }], pick: 'U' }
+            ]
+          },
+          {
+            num: 8,
+            beats: 4,
+            coachTip: 'Cierre del Bloque 2: s4:9 → s4:12 → s4:11 sostenido 3 tiempos. Como el dedo 3 ya queda apoyado en s4:11, ¡ya estás listo para arrancar el Compás 9!',
+            events: [
+              { beat: 0.0, dur: 0.5, notes: [{ s: 4, f: 9,  finger: 1 }], pick: 'D' },
+              { beat: 0.5, dur: 0.5, notes: [{ s: 4, f: 12, finger: 4 }], pick: 'U' },
+              { beat: 1.0, dur: 3.0, notes: [{ s: 4, f: 11, finger: 3 }], pick: 'D', tech: 'tie' }
+            ]
+          },
+          m9(9,  'Bloque 3 (Staccato + Pull-off): para el staccato (•), afloja la presión del dedo justo después de pulsar SIN despegarlo de la cuerda. Luego haz el pull-off s2:10→9 (en Principiante puedes pulsar ambas suave con púa) y rueda (roll) el índice de s2:9 a s1:9.'),
+          m9(10, 'Repetición del motivo agudo (2/3). Mantén el dedo índice preparado como pequeña media cejilla o rodillo entre la 2ª y 1ª cuerda en el traste 9.'),
+          m9(11, 'Tercera repetición del motivo agudo (3/3). Prepárate mentalmente: el Compás 12 empieza con un silencio de corchea antes de la bajada rápida.'),
+          {
+            num: 12,
+            beats: 4,
+            coachTip: 'Descenso ligado + Dmaj7: respeta el silencio inicial de corchea, baja con dos pares de pull-offs (10p9 en 2ª y 11p9 en 3ª) hacia s4:12, silencia 1 negra y arpegia Dmaj7. En Principiante puedes usar Dmaj7 abierto (x-x-0-2-2-2).',
+            events: [
+              { beat: 0.0,  dur: 0.5,  notes: [], tech: 'rest' },
+              { beat: 0.5,  dur: 0.25, notes: [{ s: 2, f: 10, finger: 2 }], pick: 'D', tech: 'pull-off' },
+              { beat: 0.75, dur: 0.25, notes: [{ s: 2, f: 9,  finger: 1 }], pick: '',  tech: 'pull-off-target' },
+              { beat: 1.0,  dur: 0.25, notes: [{ s: 3, f: 11, finger: 3 }], pick: 'D', tech: 'pull-off' },
+              { beat: 1.25, dur: 0.25, notes: [{ s: 3, f: 9,  finger: 1 }], pick: '',  tech: 'pull-off-target' },
+              { beat: 1.5,  dur: 0.5,  notes: [{ s: 4, f: 12, finger: 4 }], pick: 'D' },
+              { beat: 2.0,  dur: 1.0,  notes: [], tech: 'rest' },
+              {
+                beat: 3.0, dur: 1.0, tech: 'arpeggio', pick: 'D', chordLabel: 'Dmaj7',
+                notes: [
+                  { s: 4, f: 12, finger: 4 },
+                  { s: 3, f: 11, finger: 3 },
+                  { s: 2, f: 10, finger: 2 },
+                  { s: 1, f: 9,  finger: 1 }
+                ],
+                begNotes: [
+                  { s: 4, f: 0, finger: 0 },
+                  { s: 3, f: 2, finger: 1 },
+                  { s: 2, f: 2, finger: 2 },
+                  { s: 1, f: 2, finger: 3 }
+                ]
+              }
+            ]
+          },
+          {
+            num: 13,
+            beats: 4,
+            coachTip: 'Bloque 4 (Arpegio ascendente A — Let ring): arma la escalerita [s4:7(3), s3:6(2), s2:5(1)] y barre suavemente hacia abajo desde la 5ª cuerda al aire hasta la 1ª cuerda al aire dejándolas resonar 3 tiempos. En Principiante puedes usar A abierto (x-0-2-2-2-0).',
+            events: [
+              { beat: 0.0,  dur: 0.25, notes: [{ s: 5, f: 0, finger: 0 }], pick: 'D', tech: 'let-ring' },
+              { beat: 0.25, dur: 0.25, notes: [{ s: 4, f: 7, finger: 3 }], begNotes: [{ s: 4, f: 2, finger: 1 }], pick: 'D', tech: 'let-ring' },
+              { beat: 0.5,  dur: 0.25, notes: [{ s: 3, f: 6, finger: 2 }], begNotes: [{ s: 3, f: 2, finger: 2 }], pick: 'D', tech: 'let-ring' },
+              { beat: 0.75, dur: 0.25, notes: [{ s: 2, f: 5, finger: 1 }], begNotes: [{ s: 2, f: 2, finger: 3 }], pick: 'D', tech: 'let-ring' },
+              { beat: 1.0,  dur: 3.0,  notes: [{ s: 1, f: 0, finger: 0 }], pick: 'D', tech: 'let-ring' }
+            ]
+          },
+          {
+            num: 14,
+            beats: 4,
+            coachTip: 'Cierre armónico de blancas arpegiadas: Dmaj7 (2 tiempos) → C# mayor agudo (2 tiempos, media cejilla del dedo 1 en traste 9 de cuerdas 2 y 1). En Principiante: Dmaj7 abierto → C# reducido (x-x-6-6-6-x).',
+            events: [
+              {
+                beat: 0.0, dur: 2.0, tech: 'arpeggio', pick: 'D', chordLabel: 'Dmaj7',
+                notes: [
+                  { s: 4, f: 12, finger: 4 },
+                  { s: 3, f: 11, finger: 3 },
+                  { s: 2, f: 10, finger: 2 },
+                  { s: 1, f: 9,  finger: 1 }
+                ],
+                begNotes: [
+                  { s: 4, f: 0, finger: 0 },
+                  { s: 3, f: 2, finger: 1 },
+                  { s: 2, f: 2, finger: 2 },
+                  { s: 1, f: 2, finger: 3 }
+                ]
+              },
+              {
+                beat: 2.0, dur: 2.0, tech: 'arpeggio', pick: 'D', chordLabel: 'C#',
+                notes: [
+                  { s: 4, f: 11, finger: 3 },
+                  { s: 3, f: 10, finger: 2 },
+                  { s: 2, f: 9,  finger: 1 },
+                  { s: 1, f: 9,  finger: 1 }
+                ],
+                begNotes: [
+                  { s: 4, f: 6, finger: 1 },
+                  { s: 3, f: 6, finger: 2 },
+                  { s: 2, f: 6, finger: 3 }
+                ]
+              }
+            ]
+          },
+          {
+            num: 15,
+            beats: 4,
+            coachTip: 'Respiro dramático completo (4 tiempos de silencio). Apaga suavemente las cuerdas al entrar al tiempo 1 y aprovecha este compás para posicionar la mano en el acorde A de la Sección A.',
+            events: [
+              { beat: 0.0, dur: 4.0, notes: [], tech: 'rest' }
+            ]
+          }
+        ];
+      }
+
+      // Riff Agudo de Sección H (Compases 194–195)
+      function buildSectionHRiffMeasures() {
+        return [
+          {
+            num: 194,
+            beats: 4,
+            coachTip: 'Riff Agudo (Compás 194): abre con 5ª cuerda al aire (La) mientras llevas la mano al traste 10. Alterna púa en D4:10-12 y G3:9, y ejecuta el ligado rápido 10-12p10-9-10 en la 3ª cuerda.',
+            events: [
+              { beat: 0.0,  dur: 0.5,  notes: [{ s: 5, f: 0,  finger: 0 }], pick: 'D', tech: 'let-ring' },
+              { beat: 0.5,  dur: 0.5,  notes: [{ s: 4, f: 10, finger: 2 }], pick: 'U' },
+              { beat: 1.0,  dur: 0.5,  notes: [{ s: 4, f: 12, finger: 4 }], pick: 'D' },
+              { beat: 1.5,  dur: 0.5,  notes: [{ s: 3, f: 9,  finger: 1 }], pick: 'U' },
+              { beat: 2.0,  dur: 0.5,  notes: [{ s: 3, f: 10, finger: 2 }], pick: 'D' },
+              { beat: 2.5,  dur: 0.25, notes: [{ s: 3, f: 12, finger: 4 }], pick: 'U', tech: 'pull-off' },
+              { beat: 2.75, dur: 0.25, notes: [{ s: 3, f: 10, finger: 2 }], pick: '',  tech: 'pull-off-target' },
+              { beat: 3.0,  dur: 0.5,  notes: [{ s: 3, f: 9,  finger: 1 }], pick: 'D' },
+              { beat: 3.5,  dur: 0.5,  notes: [{ s: 3, f: 10, finger: 2 }], pick: 'U' }
+            ]
+          },
+          {
+            num: 195,
+            beats: 4,
+            coachTip: 'Tríadas agudas con slide (Compás 195): arma Dm en traste 10 [s3:10, s2:10, s1:10], baja a la posición [s3:9, s2:10, s1:8] y desliza en bloque a [s3:7, s2:8, s1:7], cerrando en Em agudo en traste 12.',
+            events: [
+              {
+                beat: 0.0, dur: 1.0, tech: 'arpeggio', pick: 'D', chordLabel: 'Dm (X)',
+                notes: [{ s: 3, f: 10, finger: 1 }, { s: 2, f: 10, finger: 1 }, { s: 1, f: 10, finger: 1 }]
+              },
+              {
+                beat: 1.0, dur: 1.0, tech: 'slide', pick: 'D', chordLabel: 'C/G → Bm',
+                notes: [{ s: 3, f: 9, finger: 2 }, { s: 2, f: 10, finger: 3 }, { s: 1, f: 8, finger: 1 }]
+              },
+              {
+                beat: 2.0, dur: 1.0, tech: 'let-ring', pick: 'D', chordLabel: 'Em7/G',
+                notes: [{ s: 3, f: 7, finger: 1 }, { s: 2, f: 8, finger: 2 }, { s: 1, f: 7, finger: 1 }]
+              },
+              {
+                beat: 3.0, dur: 1.0, tech: 'arpeggio', pick: 'D', chordLabel: 'Em (XII)',
+                notes: [{ s: 3, f: 12, finger: 1 }, { s: 2, f: 12, finger: 1 }, { s: 1, f: 12, finger: 1 }]
+              }
+            ]
+          }
+        ];
+      }
+
+      // Complete Chord Voicings Dictionary for Cantata
+      const CANTATA_CHORDS = {
+        'A_5': {
+          display: 'A',
+          orig: { label: 'A (cejilla traste 5)', formula: '5-7-7-6-5-5', baseFret: 5, frets: [5,7,7,6,5,5], fingers: ['1','3','4','2','1','1'], barre: { fret: 5, from: 0, to: 5 }, note: 'Cejilla completa en traste 5 con timbre brillante.' },
+          beg:  { label: 'A (abierto)', formula: 'x-0-2-2-2-0', baseFret: 1, frets: [-1,0,2,2,2,0], fingers: ['','','1','2','3',''], note: 'Postura abierta sin cejilla para comenzar fluido.' }
+        },
+        'A': {
+          display: 'A',
+          orig: { label: 'A mayor', formula: 'x-0-2-2-2-0', baseFret: 1, frets: [-1,0,2,2,2,0], fingers: ['','','1','2','3',''], note: 'La mayor abierto; evita la 6ª cuerda.' },
+          beg:  { label: 'A mayor', formula: 'x-0-2-2-2-0', baseFret: 1, frets: [-1,0,2,2,2,0], fingers: ['','','1','2','3',''], note: 'Dedos 1, 2 y 3 juntos en traste 2.' }
+        },
+        'D/F#': {
+          display: 'D/F#',
+          orig: { label: 'D/F# (pulgar en 6ª)', formula: '2-x-0-2-3-2', baseFret: 1, frets: [2,-1,0,2,3,2], fingers: ['T','','','1','3','2'], note: 'Pulgar (T) pisando el Fa# grave en traste 2.' },
+          beg:  { label: 'D/F# (sin 1ª cuerda)', formula: '2-x-0-2-3-x', baseFret: 1, frets: [2,-1,0,2,3,-1], fingers: ['1','','','2','3',''], note: 'Índice en 6ª traste 2, silenciando la 1ª cuerda.' }
+        },
+        'Esus2': {
+          display: 'Esus2',
+          orig: { label: 'Esus2 (traste 7)', formula: 'x-7-9-9-7-7', baseFret: 7, frets: [-1,7,9,9,7,7], fingers: ['','1','3','4','1','1'], barre: { fret: 7, from: 1, to: 5 }, note: 'Molde móvil en traste 7 que desciende por todo el mástil.' },
+          beg:  { label: 'Esus2 (abierto)', formula: '0-2-4-4-0-0', baseFret: 1, frets: [0,2,4,4,0,0], fingers: ['','1','3','4','',''], note: 'Sin cejilla: conserva la sonoridad abierta y cristalina.' }
+        },
+        'Dsus2': {
+          display: 'Dsus2',
+          orig: { label: 'Dsus2 (traste 5)', formula: 'x-5-7-7-5-5', baseFret: 5, frets: [-1,5,7,7,5,5], fingers: ['','1','3','4','1','1'], barre: { fret: 5, from: 1, to: 5 }, note: 'Desliza la postura de Esus2 dos trastes atrás.' },
+          beg:  { label: 'Dsus2 (abierto)', formula: 'x-x-0-2-3-0', baseFret: 1, frets: [-1,-1,0,2,3,0], fingers: ['','','','1','3',''], note: 'Re mayor levantando el dedo de la 1ª cuerda.' }
+        },
+        'Csus2': {
+          display: 'Csus2',
+          orig: { label: 'Csus2 (traste 3)', formula: 'x-3-5-5-3-3', baseFret: 3, frets: [-1,3,5,5,3,3], fingers: ['','1','3','4','1','1'], barre: { fret: 3, from: 1, to: 5 }, note: 'Misma forma sus2 en traste 3. ¡Atento al compás de 3/4!' },
+          beg:  { label: 'Csus2 (abierto)', formula: 'x-3-0-0-3-3', baseFret: 1, frets: [-1,3,0,0,3,3], fingers: ['','2','','','3','4'], note: 'Fácil y resonante sin cejilla.' }
+        },
+        'Bsus2': {
+          display: 'Bsus2',
+          orig: { label: 'Bsus2 (traste 2)', formula: 'x-2-4-4-2-2', baseFret: 2, frets: [-1,2,4,4,2,2], fingers: ['','1','3','4','1','1'], barre: { fret: 2, from: 1, to: 5 }, note: 'Baja 1 traste en bloque desde Csus2.' },
+          beg:  { label: 'Bsus2 (3 cuerdas)', formula: 'x-2-4-4-2-x', baseFret: 1, frets: [-1,2,4,4,2,-1], fingers: ['','1','3','4','2',''], note: 'Toca de 5ª a 2ª cuerda sin cejilla completa.' }
+        },
+        'Bbsus2': {
+          display: 'Bbsus2',
+          orig: { label: 'Bbsus2 (traste 1)', formula: 'x-1-3-3-1-1', baseFret: 1, frets: [-1,1,3,3,1,1], fingers: ['','1','3','4','1','1'], barre: { fret: 1, from: 1, to: 5 }, note: 'Final de la bajada cromática en traste 1.' },
+          beg:  { label: 'Bbsus2 (3 cuerdas)', formula: 'x-1-3-3-1-x', baseFret: 1, frets: [-1,1,3,3,1,-1], fingers: ['','1','3','4','2',''], note: 'Un traste atrás de Bsus2, sin 1ª cuerda.' }
+        },
+        'A6': {
+          display: 'A6',
+          orig: { label: 'A6 (media cejilla)', formula: 'x-0-2-2-2-2', baseFret: 1, frets: [-1,0,2,2,2,2], fingers: ['','','1','1','1','1'], barre: { fret: 2, from: 2, to: 5 }, note: 'Índice acostado en traste 2 + 5ª al aire como pedal.' },
+          beg:  { label: 'A6 (media cejilla)', formula: 'x-0-2-2-2-2', baseFret: 1, frets: [-1,0,2,2,2,2], fingers: ['','','1','1','1','1'], barre: { fret: 2, from: 2, to: 5 }, note: 'Muy cómoda: deja vibrar siempre la 5ª cuerda.' }
+        },
+        'D/A': {
+          display: 'D/A',
+          orig: { label: 'D/A', formula: 'x-0-0-2-3-2', baseFret: 1, frets: [-1,0,0,2,3,2], fingers: ['','','','1','3','2'], note: 'Re mayor rasgueado desde la 5ª cuerda al aire.' },
+          beg:  { label: 'D/A', formula: 'x-0-0-2-3-2', baseFret: 1, frets: [-1,0,0,2,3,2], fingers: ['','','','1','3','2'], note: 'Igual a D mayor incluyendo el bajo en La.' }
+        },
+        'D7': {
+          display: 'D7',
+          orig: { label: 'D7', formula: 'x-x-0-2-1-2', baseFret: 1, frets: [-1,-1,0,2,1,2], fingers: ['','','','2','1','3'], note: 'Triángulo invertido en trastes 1 y 2.' },
+          beg:  { label: 'D7', formula: 'x-x-0-2-1-2', baseFret: 1, frets: [-1,-1,0,2,1,2], fingers: ['','','','2','1','3'], note: 'Mantén firme el dedo 1 en 2ª cuerda traste 1.' }
+        },
+        'D7sus4': {
+          display: 'D7sus4',
+          orig: { label: 'D7sus4', formula: 'x-x-0-2-1-3', baseFret: 1, frets: [-1,-1,0,2,1,3], fingers: ['','','','2','1','4'], note: 'Solo agrega el dedo 4 en traste 3 de la 1ª cuerda.' },
+          beg:  { label: 'D7sus4', formula: 'x-x-0-2-1-3', baseFret: 1, frets: [-1,-1,0,2,1,3], fingers: ['','','','2','1','4'], note: 'No desarmes el D7: suma el meñique en 1ª:3.' }
+        },
+        'G': {
+          display: 'G',
+          orig: { label: 'G mayor', formula: '3-2-0-0-0-3', baseFret: 1, frets: [3,2,0,0,0,3], fingers: ['2','1','','','','3'], note: 'Sol mayor abierto resonante.' },
+          beg:  { label: 'G mayor', formula: '3-2-0-0-0-3', baseFret: 1, frets: [3,2,0,0,0,3], fingers: ['2','1','','','','3'], note: 'Sol mayor abierto estándar.' }
+        },
+        'Gsus4': {
+          display: 'Gsus4',
+          orig: { label: 'Gsus4', formula: '3-x-0-0-1-3', baseFret: 1, frets: [3,-1,0,0,1,3], fingers: ['2','','','','1','3'], note: 'Agrega dedo 1 en traste 1 de la 2ª cuerda.' },
+          beg:  { label: 'Gsus4', formula: '3-x-0-0-1-3', baseFret: 1, frets: [3,-1,0,0,1,3], fingers: ['2','','','','1','3'], note: 'Solo mueve el índice a la 2ª cuerda traste 1.' }
+        },
+        'Gm7': {
+          display: 'Gm7',
+          orig: { label: 'Gm7 (cejilla 3)', formula: '3-5-3-3-3-3', baseFret: 3, frets: [3,5,3,3,3,3], fingers: ['1','3','1','1','1','1'], barre: { fret: 3, from: 0, to: 5 }, note: 'Cejilla completa en traste 3.' },
+          beg:  { label: 'Gm7 (jazz sin cejilla)', formula: '3-x-3-3-3-x', baseFret: 3, frets: [3,-1,3,3,3,-1], fingers: ['1','','2','3','4',''], note: 'Un dedo por cuerda en traste 3, cero cejilla.' }
+        },
+        'D': {
+          display: 'D',
+          orig: { label: 'D mayor', formula: 'x-x-0-2-3-2', baseFret: 1, frets: [-1,-1,0,2,3,2], fingers: ['','','','1','3','2'], note: 'Re mayor estándar.' },
+          beg:  { label: 'D mayor', formula: 'x-x-0-2-3-2', baseFret: 1, frets: [-1,-1,0,2,3,2], fingers: ['','','','1','3','2'], note: 'Rasguea desde la 4ª cuerda.' }
+        },
+        'Bb': {
+          display: 'Bb',
+          orig: { label: 'Bb (cejilla 1)', formula: 'x-1-3-3-3-1', baseFret: 1, frets: [-1,1,3,3,3,1], fingers: ['','1','2','3','4','1'], barre: { fret: 1, from: 1, to: 5 }, note: 'Cejilla en traste 1 forma La.' },
+          beg:  { label: 'Bb (sin 1ª cuerda)', formula: 'x-1-3-3-3-x', baseFret: 1, frets: [-1,1,3,3,3,-1], fingers: ['','1','2','3','4',''], note: 'Evita presionar la 1ª cuerda para reducir fatiga.' }
+        },
+        'Cm7b5': {
+          display: 'Cm7b5',
+          orig: { label: 'Cm7b5 (semidisminuido)', formula: 'x-3-4-3-4-x', baseFret: 2, frets: [-1,3,4,3,4,-1], fingers: ['','1','3','2','4',''], note: 'No usa cejilla; rasguea las 4 cuerdas centrales.' },
+          beg:  { label: 'Cm7b5 (4 centrales)', formula: 'x-3-4-3-4-x', baseFret: 2, frets: [-1,3,4,3,4,-1], fingers: ['','1','3','2','4',''], note: 'Postura original ya accesible: deslízala luego a Bm7b5.' }
+        },
+        'Bm7b5': {
+          display: 'Bm7b5',
+          orig: { label: 'Bm7b5 (semidisminuido)', formula: 'x-2-3-2-3-x', baseFret: 1, frets: [-1,2,3,2,3,-1], fingers: ['','1','3','2','4',''], note: 'Desliza exactamente Cm7b5 un traste atrás.' },
+          beg:  { label: 'Bm7b5 (4 centrales)', formula: 'x-2-3-2-3-x', baseFret: 1, frets: [-1,2,3,2,3,-1], fingers: ['','1','3','2','4',''], note: 'Un traste hacia el clavijero desde Cm7b5.' }
+        },
+        'C': {
+          display: 'C',
+          orig: { label: 'C mayor', formula: 'x-3-2-0-1-0', baseFret: 1, frets: [-1,3,2,0,1,0], fingers: ['','3','2','','1',''], note: 'Do mayor abierto.' },
+          beg:  { label: 'C mayor', formula: 'x-3-2-0-1-0', baseFret: 1, frets: [-1,3,2,0,1,0], fingers: ['','3','2','','1',''], note: 'Do mayor estándar.' }
+        },
+        'Em': {
+          display: 'Em',
+          orig: { label: 'Em', formula: '0-2-2-0-0-0', baseFret: 1, frets: [0,2,2,0,0,0], fingers: ['','2','3','','',''], note: 'Mi menor abierto.' },
+          beg:  { label: 'Em', formula: '0-2-2-0-0-0', baseFret: 1, frets: [0,2,2,0,0,0], fingers: ['','2','3','','',''], note: 'Respiro ideal para relajar la mano.' }
+        },
+        'Am': {
+          display: 'Am',
+          orig: { label: 'Am', formula: 'x-0-2-2-1-0', baseFret: 1, frets: [-1,0,2,2,1,0], fingers: ['','','2','3','1',''], note: 'La menor abierto.' },
+          beg:  { label: 'Am', formula: 'x-0-2-2-1-0', baseFret: 1, frets: [-1,0,2,2,1,0], fingers: ['','','2','3','1',''], note: 'La menor estándar.' }
+        },
+        'F#m': {
+          display: 'F#m',
+          orig: { label: 'F#m (cejilla 2)', formula: '2-4-4-2-2-2', baseFret: 2, frets: [2,4,4,2,2,2], fingers: ['1','3','4','1','1','1'], barre: { fret: 2, from: 0, to: 5 }, note: 'Cejilla completa en traste 2.' },
+          beg:  { label: 'F#m (sin cejilla)', formula: '2-x-4-2-2-x', baseFret: 1, frets: [2,-1,4,2,2,-1], fingers: ['1','','4','2','3',''], note: 'Mantiene el bajo Fa# sin cejilla completa.' }
+        },
+        'G#dim': {
+          display: 'G#dim',
+          orig: { label: 'G#dim7', formula: '4-x-3-4-3-x', baseFret: 2, frets: [4,-1,3,4,3,-1], fingers: ['3','','1','4','2',''], note: 'Paso rápido en el compás de 2/4.' },
+          beg:  { label: 'G#dim (3 cuerdas)', formula: '4-x-3-4-x-x', baseFret: 2, frets: [4,-1,3,4,-1,-1], fingers: ['2','','1','3','',''], note: 'Solo 3 notas para cambiar veloz en 2/4.' }
+        },
+        'Dmaj7/F#': {
+          display: 'Dmaj7/F#',
+          orig: { label: 'Dmaj7/F#', formula: '2-x-0-2-2-2', baseFret: 1, frets: [2,-1,0,2,2,2], fingers: ['T','','','1','1','1'], barre: { fret: 2, from: 3, to: 5 }, note: 'Pulgar en 6ª:2 + media cejilla en traste 2 con 4ª al aire.' },
+          beg:  { label: 'Dmaj7/F# (3 dedos)', formula: '2-x-0-2-2-x', baseFret: 1, frets: [2,-1,0,2,2,-1], fingers: ['1','','','2','3',''], note: 'Sin pulgar: tres dedos en traste 2 y 4ª al aire.' }
+        },
+        'B7(9)': {
+          display: 'B7(9)',
+          orig: { label: 'B7(9)', formula: 'x-2-1-2-2-x', baseFret: 1, frets: [-1,2,1,2,2,-1], fingers: ['','2','1','3','4',''], note: 'Acorde novena jazz/rock en trastes 1 y 2.' },
+          beg:  { label: 'B7 (abierto)', formula: 'x-2-1-2-0-2', baseFret: 1, frets: [-1,2,1,2,0,2], fingers: ['','2','1','3','','4'], note: 'B7 tradicional más espaciado.' }
+        },
+        'E/G#': {
+          display: 'E/G#',
+          orig: { label: 'E/G#', formula: '4-x-2-4-5-x', baseFret: 2, frets: [4,-1,2,4,5,-1], fingers: ['2','','1','3','4',''], note: 'Inversión de paso en el segundo compás de 2/4.' },
+          beg:  { label: 'E/G# (abierto)', formula: '4-2-2-1-0-0', baseFret: 1, frets: [4,2,2,1,0,0], fingers: ['4','2','3','1','',''], note: 'Mi mayor agregando el bajo Sol# con dedo 4.' }
+        },
+        'C#7(#9)': {
+          display: 'C#7(#9)',
+          orig: { label: 'C#7(#9) — Hendrix', formula: 'x-4-3-4-5-x', baseFret: 3, frets: [-1,4,3,4,5,-1], fingers: ['','2','1','3','4',''], note: 'Clásico acorde Hendrix lleno de tensión rock.' },
+          beg:  { label: 'C#7 (compacto)', formula: 'x-4-3-4-2-x', baseFret: 2, frets: [-1,4,3,4,2,-1], fingers: ['','3','2','4','1',''], note: 'Alternativa sin estirar el meñique al traste 5.' }
+        },
+        'F#m/A': {
+          display: 'F#m/A',
+          orig: { label: 'F#m/A', formula: 'x-0-4-2-2-2', baseFret: 1, frets: [-1,0,4,2,2,2], fingers: ['','','3','1','1','1'], barre: { fret: 2, from: 3, to: 5 }, note: '5ª al aire + media cejilla en 2 + dedo 3 en 4.' },
+          beg:  { label: 'F#m/A (3 dedos)', formula: 'x-0-4-2-2-x', baseFret: 1, frets: [-1,0,4,2,2,-1], fingers: ['','','4','1','2',''], note: 'Silencia la 1ª cuerda para evitar media cejilla.' }
+        },
+        'Bdim/D': {
+          display: 'Bdim/D',
+          orig: { label: 'Bdim/D', formula: 'x-x-0-4-3-1', baseFret: 1, frets: [-1,-1,0,4,3,1], fingers: ['','','','4','3','1'], note: 'Bajo Re al aire con tríada disminuida.' },
+          beg:  { label: 'Bdim/D (fácil)', formula: 'x-x-0-1-0-1', baseFret: 1, frets: [-1,-1,0,1,0,1], fingers: ['','','','1','','2'], note: 'Solo 2 dedos en traste 1.' }
+        },
+        'Bm/D': {
+          display: 'Bm/D',
+          orig: { label: 'Bm/D', formula: 'x-x-0-4-3-2', baseFret: 1, frets: [-1,-1,0,4,3,2], fingers: ['','','','3','2','1'], note: 'Escalerita 4-3-2 con 4ª al aire.' },
+          beg:  { label: 'Bm/D', formula: 'x-x-0-4-3-2', baseFret: 1, frets: [-1,-1,0,4,3,2], fingers: ['','','','3','2','1'], note: 'Cómoda y sin cejilla.' }
+        },
+        'C#7/G#': {
+          display: 'C#7/G#',
+          orig: { label: 'C#7/G#', formula: '4-4-3-4-2-x', baseFret: 2, frets: [4,4,3,4,2,-1], fingers: ['2','3','1','4','1',''], note: 'Dominante con bajo en Sol#.' },
+          beg:  { label: 'C#7/G# (4 cuerdas)', formula: '4-x-3-4-2-x', baseFret: 2, frets: [4,-1,3,4,2,-1], fingers: ['3','','2','4','1',''], note: 'Omite la 5ª cuerda.' }
+        },
+        'B7/F#': {
+          display: 'B7/F#',
+          orig: { label: 'B7/F#', formula: '2-2-1-2-0-2', baseFret: 1, frets: [2,2,1,2,0,2], fingers: ['2','3','1','4','','4'], note: 'B7 con bajo en Fa#.' },
+          beg:  { label: 'B7/F# (3 dedos)', formula: '2-x-1-2-0-x', baseFret: 1, frets: [2,-1,1,2,0,-1], fingers: ['2','','1','3','',''], note: 'Limpio y muy fácil de armar.' }
+        },
+        'Amaj7': {
+          display: 'Amaj7',
+          orig: { label: 'Amaj7', formula: 'x-0-2-1-2-0', baseFret: 1, frets: [-1,0,2,1,2,0], fingers: ['','','2','1','3',''], note: 'Color luminoso y dulce.' },
+          beg:  { label: 'Amaj7', formula: 'x-0-2-1-2-0', baseFret: 1, frets: [-1,0,2,1,2,0], fingers: ['','','2','1','3',''], note: 'Triángulo pequeño en trastes 1–2.' }
+        },
+        'Bm7': {
+          display: 'Bm7',
+          orig: { label: 'Bm7 (cejilla 2)', formula: 'x-2-4-2-3-2', baseFret: 2, frets: [-1,2,4,2,3,2], fingers: ['','1','3','1','2','1'], barre: { fret: 2, from: 1, to: 5 }, note: 'Cejilla en traste 2 forma Am7.' },
+          beg:  { label: 'Bm7 (abierto)', formula: 'x-2-0-2-0-2', baseFret: 1, frets: [-1,2,0,2,0,2], fingers: ['','1','','2','','3'], note: 'Cero cejillas: 3 dedos en traste 2.' }
+        },
+        'Bm': {
+          display: 'Bm',
+          orig: { label: 'Bm (traste 7)', formula: '7-9-9-7-7-7', baseFret: 7, frets: [7,9,9,7,7,7], fingers: ['1','3','4','1','1','1'], barre: { fret: 7, from: 0, to: 5 }, note: 'Posición alta en traste 7 para bajar a Bb7(13).' },
+          beg:  { label: 'Bm (sin cejilla)', formula: 'x-2-4-4-3-x', baseFret: 1, frets: [-1,2,4,4,3,-1], fingers: ['','1','3','4','2',''], note: 'Silencia la 1ª cuerda para evitar cejilla completa.' }
+        },
+        'Bb7(13)': {
+          display: 'Bb7(13)',
+          orig: { label: 'Bb7(13) — Traste 6', formula: '6-x-6-7-8-x', baseFret: 6, frets: [6,-1,6,7,8,-1], fingers: ['1','','2','3','4',''], note: '¡No es cejilla! Cuatro dedos independientes en trastes 6–8.' },
+          beg:  { label: 'Bb7 (traste 1)', formula: 'x-1-3-1-3-x', baseFret: 1, frets: [-1,1,3,1,3,-1], fingers: ['','1','3','1','4',''], note: 'Alternativa más cerca del clavijero.' }
+        },
+        'A#': {
+          display: 'A#',
+          orig: { label: 'A# (traste 6)', formula: '6-8-8-7-6-6', baseFret: 6, frets: [6,8,8,7,6,6], fingers: ['1','3','4','2','1','1'], barre: { fret: 6, from: 0, to: 5 }, note: 'Subida cromática de traste 5 (A) a 7 (Bm).' },
+          beg:  { label: 'A# (sin 1ª)', formula: 'x-1-3-3-3-x', baseFret: 1, frets: [-1,1,3,3,3,-1], fingers: ['','1','2','3','4',''], note: 'Postura reducida sin cejilla.' }
+        },
+        'E': {
+          display: 'E',
+          orig: { label: 'E mayor', formula: '0-2-2-1-0-0', baseFret: 1, frets: [0,2,2,1,0,0], fingers: ['','2','3','1','',''], note: '¡Acorde abierto! Aprovecha para soltar tensión de cejillas.' },
+          beg:  { label: 'E mayor', formula: '0-2-2-1-0-0', baseFret: 1, frets: [0,2,2,1,0,0], fingers: ['','2','3','1','',''], note: 'Relaja completamente el pulgar izquierdo aquí.' }
+        },
+        'F': {
+          display: 'F',
+          orig: { label: 'F (cejilla 1)', formula: '1-3-3-2-1-1', baseFret: 1, frets: [1,3,3,2,1,1], fingers: ['1','3','4','2','1','1'], barre: { fret: 1, from: 0, to: 5 }, note: 'Cejilla completa en traste 1.' },
+          beg:  { label: 'F (pequeño)', formula: 'x-x-3-2-1-1', baseFret: 1, frets: [-1,-1,3,2,1,1], fingers: ['','','3','2','1','1'], barre: { fret: 1, from: 4, to: 5 }, note: 'Fa en las 4 cuerdas agudas, mucho más liviano.' }
+        },
+        'F#': {
+          display: 'F#',
+          orig: { label: 'F# (cejilla 2)', formula: '2-4-4-3-2-2', baseFret: 2, frets: [2,4,4,3,2,2], fingers: ['1','3','4','2','1','1'], barre: { fret: 2, from: 0, to: 5 }, note: 'Desliza F un traste arriba.' },
+          beg:  { label: 'F# (pequeño)', formula: 'x-x-4-3-2-2', baseFret: 1, frets: [-1,-1,4,3,2,2], fingers: ['','','3','2','1','1'], barre: { fret: 2, from: 4, to: 5 }, note: 'Desliza el Fa pequeño un traste arriba.' }
+        },
+        'Bm/A': {
+          display: 'Bm/A',
+          orig: { label: 'Bm/A', formula: 'x-0-4-4-3-2', baseFret: 1, frets: [-1,0,4,4,3,2], fingers: ['','','3','4','2','1'], note: 'Bajo descendente en La al aire.' },
+          beg:  { label: 'Bm/A (sin 1ª)', formula: 'x-0-4-4-3-x', baseFret: 1, frets: [-1,0,4,4,3,-1], fingers: ['','','2','3','1',''], note: 'Solo libera la 5ª cuerda al aire desde Bm.' }
+        },
+        'Cmaj7/G': {
+          display: 'Cmaj7/G',
+          orig: { label: 'Cmaj7/G', formula: '3-3-2-0-0-0', baseFret: 1, frets: [3,3,2,0,0,0], fingers: ['2','3','1','','',''], note: 'Tres cuerdas agudas abiertas resonantes.' },
+          beg:  { label: 'Cmaj7/G', formula: '3-3-2-0-0-0', baseFret: 1, frets: [3,3,2,0,0,0], fingers: ['2','3','1','','',''], note: 'Fácil y bellísimo.' }
+        },
+        'Fmaj7/C': {
+          display: 'Fmaj7/C',
+          orig: { label: 'Fmaj7/C', formula: 'x-3-3-2-1-0', baseFret: 1, frets: [-1,3,3,2,1,0], fingers: ['','3','4','2','1',''], note: 'Deja la 1ª cuerda al aire para la 7ª mayor.' },
+          beg:  { label: 'Fmaj7 (abierto)', formula: 'x-x-3-2-1-0', baseFret: 1, frets: [-1,-1,3,2,1,0], fingers: ['','','3','2','1',''], note: 'Escalerita de 3 dedos con 1ª al aire.' }
+        },
+        'C/G': {
+          display: 'C/G',
+          orig: { label: 'C/G', formula: '3-3-2-0-1-0', baseFret: 1, frets: [3,3,2,0,1,0], fingers: ['3','4','2','','1',''], note: 'Do mayor con peso grave en Sol.' },
+          beg:  { label: 'C (abierto)', formula: 'x-3-2-0-1-0', baseFret: 1, frets: [-1,3,2,0,1,0], fingers: ['','3','2','','1',''], note: 'Usa Do abierto para enfocarte en el rasgueo percusivo.' }
+        },
+        'C#m': {
+          display: 'C#m',
+          orig: { label: 'C#m (cejilla 4)', formula: 'x-4-6-6-5-4', baseFret: 4, frets: [-1,4,6,6,5,4], fingers: ['','1','3','4','2','1'], barre: { fret: 4, from: 1, to: 5 }, note: 'Cejilla en traste 4 forma Am.' },
+          beg:  { label: 'C#m (sin 1ª)', formula: 'x-4-6-6-5-x', baseFret: 4, frets: [-1,4,6,6,5,-1], fingers: ['','1','3','4','2',''], note: 'Sin presionar la 1ª cuerda.' }
+        },
+        'Em/B5': {
+          display: 'Em/B5',
+          orig: { label: 'Em/B5', formula: 'x-2-2-0-0-0', baseFret: 1, frets: [-1,2,2,0,0,0], fingers: ['','1','2','','',''], note: 'Cuerdas agudas abiertas con peso en Si.' },
+          beg:  { label: 'Em/B', formula: 'x-2-2-0-0-0', baseFret: 1, frets: [-1,2,2,0,0,0], fingers: ['','1','2','','',''], note: 'Igual a Em rasgueado desde la 5ª cuerda.' }
+        },
+        'Cmaj7(#11)': {
+          display: 'Cmaj7(#11)',
+          orig: { label: 'Cmaj7(#11) — Lidio', formula: 'x-3-2-0-0-2', baseFret: 1, frets: [-1,3,2,0,0,2], fingers: ['','3','1','','','2'], note: 'Fa# en 1ª cuerda + 2ª y 3ª al aire.' },
+          beg:  { label: 'Cmaj7 (abierto)', formula: 'x-3-2-0-0-0', baseFret: 1, frets: [-1,3,2,0,0,0], fingers: ['','3','2','','',''], note: 'Dos dedos solamente.' }
+        },
+        'C6/Bb': {
+          display: 'C6/Bb',
+          orig: { label: 'C6/Bb', formula: 'x-1-2-2-1-0', baseFret: 1, frets: [-1,1,2,2,1,0], fingers: ['','1','3','4','2',''], note: 'Puente final que resuelve hacia Gm7.' },
+          beg:  { label: 'C6/Bb (3 dedos)', formula: 'x-1-2-2-x-0', baseFret: 1, frets: [-1,1,2,2,-1,0], fingers: ['','1','2','3','',''], note: 'Tres dedos en trastes 1 y 2.' }
+        },
+        'Am7': {
+          display: 'Am7',
+          orig: { label: 'Am7', formula: 'x-0-2-0-1-0', baseFret: 1, frets: [-1,0,2,0,1,0], fingers: ['','','2','','1',''], note: 'La menor séptima abierto.' },
+          beg:  { label: 'Am7', formula: 'x-0-2-0-1-0', baseFret: 1, frets: [-1,0,2,0,1,0], fingers: ['','','2','','1',''], note: 'Solo 2 dedos.' }
+        },
+        // Special Intro closing chords for the Lab
+        'Dmaj7_high': {
+          display: 'Dmaj7 (agudo)',
+          orig: { label: 'Dmaj7 — Compases 12 y 14', formula: 'x-x-12-11-10-9', baseFret: 9, frets: [-1,-1,12,11,10,9], fingers: ['','','4','3','2','1'], note: 'Escalerita descendente en trastes 12–9 que cierra la Intro.' },
+          beg:  { label: 'Dmaj7 (abierto)', formula: 'x-x-0-2-2-2', baseFret: 1, frets: [-1,-1,0,2,2,2], fingers: ['','','','1','2','3'], note: 'Mismo color armónico en primera posición.' }
+        },
+        'C#_high': {
+          display: 'C# (agudo)',
+          orig: { label: 'C# — Compás 14', formula: 'x-x-11-10-9-9', baseFret: 9, frets: [-1,-1,11,10,9,9], fingers: ['','','3','2','1','1'], barre: { fret: 9, from: 4, to: 5 }, note: 'Media cejilla del índice en traste 9 (cuerdas 2 y 1).' },
+          beg:  { label: 'C# (reducido)', formula: 'x-x-6-6-6-x', baseFret: 5, frets: [-1,-1,6,6,6,-1], fingers: ['','','1','2','3',''], note: 'Tríada compacta en traste 6.' }
+        }
+      };
+
+      const CANTATA_TRANSITIONS = {
+        'A_5->D/F#': 'Anticipa el bajo en traste 2 de la 6ª cuerda antes del último pulso. En Original, desliza la mano desde el traste 5 sin apretar el pulgar.',
+        'D/F#->Esus2': 'En Original, usa el índice como riel hacia el traste 7. En Principiante, apoya dedos 3 y 4 juntos en traste 4 (cuerdas 4 y 3).',
+        'Esus2->Dsus2': 'En Original, ¡NO desarmes los dedos! Afloja un instante la presión y desliza el bloque exactamente 2 trastes atrás.',
+        'Dsus2->Csus2': '¡Atención! Al llegar a Csus2 entras en un compás corto de 3/4 (cuenta 1-2-3 fuerte).',
+        'Csus2->Bsus2': 'Bajada cromática de 1 solo traste manteniendo armada la postura.',
+        'Bsus2->Bbsus2': 'Último semitono hasta el traste 1. Apoya el pulgar en el centro trasero del mástil.',
+        'A6->D/A': 'Deja vibrar siempre la 5ª cuerda al aire como pedal. El índice ya está en el traste 2: arma el triángulo de D alrededor de él.',
+        'D/A->A6': 'Acuesta el índice en traste 2 sobre las 4 cuerdas agudas mientras la 5ª sigue sonando.',
+        'D7->D7sus4': '¡No muevas el D7! Solo agrega el meñique (4) en el traste 3 de la 1ª cuerda.',
+        'D/F#->Cm7b5': 'Entras en 3/4 (vals). Baja hacia la 5ª cuerda traste 3 armando el zigzag 3-4-3-4.',
+        'Cm7b5->Bm7b5': 'Regalo técnico: desliza los 4 dedos exactamente 1 traste hacia el clavijero sin despegarlos.',
+        'F#m->G#dim': '¡COMPÁS DE 2/4! Cuenta "1 - 2" firme sin cambiar la velocidad del pie.',
+        'B7(9)->E/G#': 'Segundo compás de 2/4: sube el bajo a Sol# (traste 4) para caer en Dmaj7/F#.',
+        'Dmaj7/F#->C#7(#9)': 'Desliza el índice al traste 3 de la 4ª cuerda como ancla del acorde Hendrix.',
+        'Bm->Bb7(13)': 'Vals en 3/4: en Original retrocede del traste 7 al 6 sin hacer cejilla (4 dedos separados).',
+        'Bm->E': '¡Respiro de la mano izquierda! Abre un Mi mayor relajado para liberar la fatiga de las cejillas.',
+        'Bm->Bm/A': 'Solo levanta el bajo de Si para que suene la 5ª cuerda al aire.',
+        'Em/B5->Cmaj7(#11)': 'Deja sonar las cuerdas 2 y 3 al aire en toda la transición para lograr el sonido cristalino.'
+      };
+
+      // MASTER SONG LIBRARY (Clean JSON-serializable structure)
+      const DEFAULT_SONG_LIBRARY = [
+        {
+          id: 'cantata-puentes-amarillos',
+          title: 'Cantata de puentes amarillos',
+          artist: 'Luis Alberto Spinetta (Adaptación tutorial Marcos Lozano)',
+          tuning: 'EADGBE',
+          chords: CANTATA_CHORDS,
+          transitions: CANTATA_TRANSITIONS,
+          sections: [
+            {
+              id: 'sec-intro',
+              name: '1. Intro (Compases 1–15)',
+              subtitle: 'Transcripción milimétrica completa',
+              type: 'tab',
+              level: 4,
+              meterLabel: '4/4',
+              measureRangeLabel: 'Compases 1–15',
+              baseBpm: 102,
+              description: 'Todas las notas exactas desde el Compás 1 (octava grave, posición IX) hasta el silencio dramático del Compás 15. Usa el bucle A–B para dominar cada bloque de 4 compases.',
+              loopPresets: [
+                { label: 'Todo (1–15)', start: 0, end: 14 },
+                { label: 'Bloque 1: Grave (1–4)', start: 0, end: 3 },
+                { label: 'Bloque 2: Medio (5–8)', start: 4, end: 7 },
+                { label: 'Bloque 3: Agudo/Staccato (9–12)', start: 8, end: 11 },
+                { label: 'Bloque 4: Arpegios Cierre (13–15)', start: 12, end: 14 }
+              ],
+              tabMeasures: buildCantataIntroMeasures()
+            },
+            {
+              id: 'sec-a',
+              name: '2. Sección A',
+              subtitle: 'Apertura y bajada cromática sus2',
+              type: 'chords',
+              level: 1,
+              meterLabel: '4/4 y 3/4',
+              measureRangeLabel: 'Compases 16–23',
+              baseBpm: 104,
+              description: 'Arranca en La mayor, pasa por D/F# y desliza una figura sus2 desde traste 7 hasta traste 1 con un compás de 3/4 en Csus2.',
+              chordMeasures: [
+                { num: 16, chord: 'A_5',   beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 17, chord: 'D/F#',  beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 18, chord: 'Esus2', beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 19, chord: 'Dsus2', beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 20, chord: 'Csus2', beats: 3, strum: '↓ · ↓ ↑ ↓ ↑' },
+                { num: 21, chord: 'Csus2', beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 22, chord: 'Bsus2', beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 23, chord: 'Bbsus2',beats: 4, strum: '↓ · ↓ · ↓ · · ·' }
+              ]
+            },
+            {
+              id: 'sec-b',
+              name: '3. Sección B',
+              subtitle: 'Pedal en La (A6 ↔ D/A) y bajada',
+              type: 'chords',
+              level: 1,
+              meterLabel: '4/4',
+              measureRangeLabel: 'Compases 24–39',
+              baseBpm: 104,
+              description: 'Mantén la 5ª cuerda al aire como pedal entre A6 y D/A, luego juega con la suspensión D7 ↔ D7sus4 y resuelve por G → Gm7 → D → Bb → A → D.',
+              chordMeasures: [
+                { num: 24, chord: 'A6',     beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 25, chord: 'D/A',    beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 26, chord: 'A6',     beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 27, chord: 'D/A',    beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 28, chord: 'D7',     beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 29, chord: 'D7sus4', beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 30, chord: 'D7',     beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 31, chord: 'D7sus4', beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 32, chord: 'G',      beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 33, chord: 'Gm7',    beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 34, chord: 'D',      beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 35, chord: 'Bb',     beats: 4, strum: '↓ · ↓ · ↓ · ↓ ↑' },
+                { num: 36, chord: 'A',      beats: 4, strum: '↓ · ↓ · ↓ · ↓ ↑' },
+                { num: 37, chord: 'D',      beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ·' }
+              ]
+            },
+            {
+              id: 'sec-c',
+              name: '4. Sección C',
+              subtitle: 'Bajada semidisminuida en 3/4',
+              type: 'chords',
+              level: 2,
+              meterLabel: '3/4 y 4/4',
+              measureRangeLabel: 'Compases 40–50',
+              baseBpm: 104,
+              description: 'Arranca con tres compases en 3/4 (D/F# → Cm7b5 → Bm7b5) y retorna a 4/4 con G ↔ Gsus4 y una cadencia abierta muy melódica.',
+              chordMeasures: [
+                { num: 40, chord: 'D/F#',  beats: 3, strum: '↓ · ↓ ↑ ↓ ↑' },
+                { num: 41, chord: 'Cm7b5', beats: 3, strum: '↓ · ↓ ↑ ↓ ↑' },
+                { num: 42, chord: 'Bm7b5', beats: 3, strum: '↓ · ↓ ↑ ↓ ↑' },
+                { num: 43, chord: 'G',     beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 44, chord: 'Gsus4', beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 45, chord: 'G',     beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 46, chord: 'C',     beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 47, chord: 'Em',    beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 48, chord: 'Am',    beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 49, chord: 'G',     beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 50, chord: 'D/F#',  beats: 4, strum: '↓ · ↓ · ↓ · · ·' }
+              ]
+            },
+            {
+              id: 'sec-d',
+              name: '5. Sección D',
+              subtitle: 'Tensión en Fa#m y puentes de 2/4',
+              type: 'chords',
+              level: 2,
+              meterLabel: '4/4 y 2/4',
+              measureRangeLabel: 'Compases 64–82',
+              baseBpm: 108,
+              description: 'Clima intenso en Fa#m con dos compases rápidos de 2/4 (G#dim → F#m y E/G# → Dmaj7/F#) rematados con el acorde Hendrix C#7(#9).',
+              chordMeasures: [
+                { num: 64, chord: 'F#m',      beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 65, chord: 'G#dim',    beats: 2, strum: '↓ · ↓ ↑' },
+                { num: 66, chord: 'F#m',      beats: 2, strum: '↓ · ↓ ↑' },
+                { num: 67, chord: 'Dmaj7/F#', beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 68, chord: 'B7(9)',    beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 69, chord: 'E/G#',     beats: 2, strum: '↓ · ↓ ↑' },
+                { num: 70, chord: 'Dmaj7/F#', beats: 2, strum: '↓ · ↓ ↑' },
+                { num: 71, chord: 'C#7(#9)',  beats: 4, strum: '↓ X ↓ ↑ X ↑ ↓ ↑' }
+              ]
+            },
+            {
+              id: 'sec-e',
+              name: '6. Sección E',
+              subtitle: 'Interludio con inversiones y cortes',
+              type: 'chords',
+              level: 3,
+              meterLabel: '4/4',
+              measureRangeLabel: 'Compases 83–94',
+              baseBpm: 108,
+              description: 'Riqueza de bajos invertidos (F#m/A, Bdim/D, C#7/G#, B7/F#) con cortes secos que preparan la vuelta a la energía de Sección D.',
+              chordMeasures: [
+                { num: 83, chord: 'F#m/A',   beats: 4, strum: '↓ · ↓ ↑ · X ↓ ·' },
+                { num: 84, chord: 'D/A',     beats: 4, strum: '↓ · ↓ ↑ · X ↓ ·' },
+                { num: 85, chord: 'F#m/A',   beats: 4, strum: '↓ · ↓ ↑ · X ↓ ·' },
+                { num: 86, chord: 'Bdim/D',  beats: 4, strum: '↓ · ↓ · ↓ · ↓ ↑' },
+                { num: 87, chord: 'Bm/D',    beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 88, chord: 'C#7/G#',  beats: 4, strum: '↓ · ↓ · X · ↓ ↑' },
+                { num: 89, chord: 'B7/F#',   beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 90, chord: 'A',       beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 91, chord: 'Amaj7',   beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 92, chord: 'Bm7',     beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 93, chord: 'C#7(#9)', beats: 4, strum: '↓ X ↓ ↑ X ↑ ↓ ↑' }
+              ]
+            },
+            {
+              id: 'sec-f',
+              name: '7. Sección F',
+              subtitle: 'Vals melódico en 3/4',
+              type: 'chords',
+              level: 3,
+              meterLabel: '3/4 Vals',
+              measureRangeLabel: 'Compases 118–140',
+              baseBpm: 112,
+              description: 'Vals hipnótico con bajada cromática desde Bm hasta A, seguido de la subida E → F → F# y una cadencia descendente de bajos en Bm/A → Cmaj7/G → Fmaj7/C.',
+              chordMeasures: [
+                { num: 118, chord: 'Bm',      beats: 3, strum: '↓ · ↓ ↑ ↓ ↑' },
+                { num: 119, chord: 'Bb7(13)', beats: 3, strum: '↓ · ↓ ↑ ↓ ↑' },
+                { num: 120, chord: 'A',       beats: 3, strum: '↓ · ↓ ↑ ↓ ↑' },
+                { num: 121, chord: 'A#',      beats: 3, strum: '↓ · ↓ ↑ ↓ ↑' },
+                { num: 122, chord: 'Bm',      beats: 3, strum: '↓ · ↓ ↑ ↓ ↑' },
+                { num: 123, chord: 'Bb7(13)', beats: 3, strum: '↓ · ↓ ↑ ↓ ↑' },
+                { num: 124, chord: 'A',       beats: 3, strum: '↓ · ↓ ↑ ↓ ↑' },
+                { num: 125, chord: 'A#',      beats: 3, strum: '↓ · ↓ ↑ ↓ ↑' },
+                { num: 126, chord: 'Bm',      beats: 3, strum: '↓ · ↓ ↑ ↓ ↑' },
+                { num: 127, chord: 'E',       beats: 3, strum: '↓ · ↓ ↑ ↓ ↑' },
+                { num: 128, chord: 'F',       beats: 3, strum: '↓ · ↓ ↑ ↓ ↑' },
+                { num: 129, chord: 'F#',      beats: 3, strum: '↓ · ↓ ↑ ↓ ↑' },
+                { num: 130, chord: 'Bm',      beats: 3, strum: '↓ · ↓ ↑ ↓ ↑' },
+                { num: 131, chord: 'Bm/A',    beats: 3, strum: '↓ · ↓ ↑ ↓ ↑' },
+                { num: 132, chord: 'Cmaj7/G', beats: 3, strum: '↓ · ↓ ↑ ↓ ↑' },
+                { num: 133, chord: 'Fmaj7/C', beats: 3, strum: '↓ · ↓ ↑ ↓ ↑' }
+              ]
+            },
+            {
+              id: 'sec-g',
+              name: '8. Sección G',
+              subtitle: 'Rasgueo intenso y golpes apagados (X)',
+              type: 'chords',
+              level: 2,
+              meterLabel: '4/4',
+              measureRangeLabel: 'Compases 141–170',
+              baseBpm: 116,
+              description: 'Parte 1 abierta (Bm → G → Fmaj7/C → A) y Parte 2 con groove percusivo de rasgueos mudos X (A → C/G → C#m → C/G).',
+              chordMeasures: [
+                { num: 141, chord: 'Bm',      beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 142, chord: 'G',       beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 143, chord: 'Fmaj7/C', beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 144, chord: 'A',       beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 145, chord: 'A',       beats: 4, strum: '↓ X ↓ ↑ X ↑ ↓ X' },
+                { num: 146, chord: 'C/G',     beats: 4, strum: '↓ X ↓ ↑ X ↑ ↓ X' },
+                { num: 147, chord: 'C#m',     beats: 4, strum: '↓ X ↓ ↑ X ↑ ↓ X' },
+                { num: 148, chord: 'C/G',     beats: 4, strum: '↓ X ↓ ↑ X ↑ ↓ X' }
+              ]
+            },
+            {
+              id: 'sec-h',
+              name: '9. Sección H y Outro',
+              subtitle: 'Riff agudo (C.194–195) + puente final',
+              type: 'hybrid',
+              level: 4,
+              meterLabel: '4/4',
+              measureRangeLabel: 'Compases 194–237',
+              baseBpm: 120,
+              description: 'Combina la tablatura exacta del Riff Agudo (compases 194–195 con tríadas y slides) con los acordes abiertos Em/B5 → Cmaj7(#11) y el puente final modulante.',
+              loopPresets: [
+                { label: 'Riff Completo (194–195)', start: 0, end: 1 },
+                { label: 'Solo C.194 (Melodía)', start: 0, end: 0 },
+                { label: 'Solo C.195 (Tríadas)', start: 1, end: 1 }
+              ],
+              tabMeasures: buildSectionHRiffMeasures(),
+              chordMeasures: [
+                { num: 196, chord: 'Em/B5',      beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 197, chord: 'Cmaj7(#11)', beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 198, chord: 'Em/B5',      beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 199, chord: 'Cmaj7(#11)', beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 204, chord: 'C6/Bb',      beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 205, chord: 'Gm7',        beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 206, chord: 'Bb',         beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 207, chord: 'Am7',        beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 208, chord: 'F#',         beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 209, chord: 'Bb',         beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ·' }
+              ]
+            }
+          ],
+          specialChords: [
+            { key: 'Dmaj7_high', tag: 'Intro · Compases 12 y 14', steps: ['Dedo 1 en 1ª cuerda traste 9 (Do#).','Dedo 2 en 2ª cuerda traste 10 (La).','Dedo 3 en 3ª cuerda traste 11 (Fa#) y dedo 4 en 4ª cuerda traste 12 (Re).'], mistake: 'Error común: rozar la cuerda adyacente al bajar en escalera. Corrección: acerca el codo izquierdo al cuerpo y pisa bien de punta.' },
+            { key: 'C#_high',    tag: 'Intro · Compás 14', steps: ['Haz una pequeña media cejilla con el dedo 1 en el traste 9 (cuerdas 2 y 1).','Coloca dedo 2 en 3ª cuerda traste 10.','Coloca dedo 3 en 4ª cuerda traste 11.'], mistake: 'Error común: que la 1ª cuerda quede muda en la media cejilla. Corrección: presiona con la yema firme cerca de la varilla del traste 9.' },
+            { key: 'D/F#',       tag: 'Secciones A y C', steps: ['Arma el triángulo de Re mayor en trastes 2 y 3.','Original: abraza con el pulgar (T) el traste 2 de la 6ª cuerda.','Principiante: usa dedo 1 en 6ª:2 y silencia la 1ª cuerda.'], mistake: 'Error común: mutear la 4ª cuerda al aire. Corrección: arquea los nudillos dejando espacio bajo el mástil.' },
+            { key: 'Esus2',      tag: 'Bajada Sección A', steps: ['Cejilla parcial con dedo 1 en traste 7 desde la 5ª hasta la 1ª cuerda.','Dedos 3 y 4 juntos en traste 9 (cuerdas 4 y 3).','Desliza el mismo molde hacia trastes 5, 3, 2 y 1.'], mistake: 'Error común: pulsar la 6ª cuerda. Corrección: roza suavemente la 6ª con la punta del dedo 1 para silenciarla.' },
+            { key: 'Cm7b5',      tag: 'Bajada 3/4 · Sección C', steps: ['Dedo 1 en 5ª:3 y dedo 2 en 3ª:3.','Dedo 3 en 4ª:4 y dedo 4 en 2ª:4.','Rasguea de forma compacta solo las 4 cuerdas centrales.'], mistake: 'Error común: que suenen la 6ª o la 1ª al aire. Corrección: controla la amplitud de la púa en el centro.' },
+            { key: 'Bm7b5',      tag: 'Bajada 3/4 · Sección C', steps: ['Parte desde Cm7b5 sin desarmar los dedos.','Desliza exactamente 1 traste hacia atrás (trastes 2 y 3).','Mantén el pulso de vals 1-2-3.'], mistake: 'Error común: levantar toda la mano al cambiar desde Cm7b5. Corrección: desliza manteniendo contacto suave con las cuerdas.' },
+            { key: 'Dmaj7/F#',   tag: 'Sección D', steps: ['Media cejilla con dedo 1 en traste 2 (cuerdas 3, 2 y 1).','Pulgar en 6ª:2 muteando la 5ª.','Deja vibrar la 4ª cuerda al aire.'], mistake: 'Error común: apagar la 4ª cuerda. Corrección: inclina el dedo 1 levemente hacia el piso.' },
+            { key: 'B7(9)',      tag: 'Sección D', steps: ['Dedo 1 en 4ª:1 (nota guía).','Dedo 2 en 5ª:2.','Dedos 3 y 4 en traste 2 de cuerdas 3 y 2.'], mistake: 'Error común: amontonar los dedos en el traste 2. Corrección: gira la muñeca suavemente hacia afuera.' },
+            { key: 'C#7(#9)',    tag: 'Acorde Hendrix · Sec. D y E', steps: ['Dedo 1 en 4ª:3, dedo 2 en 5ª:4.','Dedo 3 en 3ª:4 y dedo 4 en 2ª:5.','Silencia 6ª y 1ª cuerda.'], mistake: 'Error común: que el meñique apague la 3ª cuerda. Corrección: coloca el dedo 4 vertical y bien de punta.' },
+            { key: 'Bb7(13)',    tag: 'Vals · Sección F', steps: ['Dedo 1 en 6ª:6 (su panza apaga la 5ª).','Dedo 2 en 4ª:6, dedo 3 en 3ª:7, dedo 4 en 2ª:8.','Recuerda: ¡NO es una cejilla!'], mistake: 'Error común: aplastar todo el traste 6 con cejilla. Corrección: usa los 4 dedos independientes.' },
+            { key: 'Cmaj7(#11)', tag: 'Sección H', steps: ['Dedo 3 en 5ª:3 y dedo 1 en 4ª:2.','Deja 3ª y 2ª cuerdas totalmente abiertas.','Agrega dedo 2 en 1ª:2 (Fa#).'], mistake: 'Error común: rozar la 2ª al aire con el dedo 2. Corrección: dobla bien la falange del dedo 2.' }
+          ],
+          guide: {
+            title: 'Plan de Progreso Paso a Paso — Cantata de Puentes Amarillos',
+            intro: 'Esta obra de más de 9 minutos combina melodía en posición aguda, cambios de compás (4/4, 3/4 y 2/4) y acordes con tensiones. Sigue estas 4 etapas usando el Bucle A–B y el modo Auto-Acelerar para llegar sin frustración al 100% de velocidad.',
+            stages: [
+              { badge: 'Etapa 1 · Días 1–4', scope: 'Intro (Bloques 1 y 2) + Secciones A y B', title: 'Posición fija IX y columna vertebral', text: 'Activa el Bucle A–B en los compases 1–4 de la Intro al 40% (41 BPM) enfocándote en asignar 1 dedo por traste (9, 10, 11, 12). En paralelo, practica Secciones A y B en Modo Principiante al 55% dominando el pedal de 5ª al aire.' },
+              { badge: 'Etapa 2 · Días 5–10', scope: 'Intro (Bloques 3 y 4) + Secciones C y D', title: 'Staccato, pull-offs y compases de 2/4', text: 'Aísla los compases 9–12 en el Bucle A–B a 45%–60% hasta que el staccato y el roll de índice (B2:9 → e1:9) salgan limpios. En el Laboratorio memoriza Cm7b5, Bm7b5 y C#7(#9) y cuenta en voz alta los 2/4 de Sección D.' },
+              { badge: 'Etapa 3 · Días 11–16', scope: 'Secciones E, F y G', title: 'Resistencia de cejillas y rasgueo percusivo', text: 'Sube la Intro con Auto-Acelerar de 60% a 85%. Practica el vals de la Sección F (3/4) soltando la presión del pulgar en cada cambio y usando el acorde E abierto como descanso muscular. En Sección G, mantén el péndulo constante para los golpes X.' },
+              { badge: 'Etapa 4 · Días 17–21', scope: 'Intro 100% + Sección H y Outro', title: 'Integración a tempo real (100%)', text: 'Practica el Riff Agudo de Sección H (compases 194–195) en bucle lento hasta limpiar el slide de tríadas. Luego recorre los 9 bloques al 90%–100% alternando al Modo Original para dominar todos los voicings de Spinetta.' }
+            ],
+            techniques: [
+              { icon: '🎯', title: 'Rutina milimétrica para la Intro (40% → 100%)', bullets: ['<strong>40%–55% (Precisión):</strong> Toca bloques de 4 compases por separado mirando el Mástil en Vivo. No subas velocidad si trastabillan las semicorcheas del pulso 1.5.', '<strong>60%–80% (Articulación):</strong> Agrega el staccato real en compases 9–11 (soltando presión sin despegar el dedo) y el pull-off en s2:10→9.', '<strong>85%–100% (Fluidez):</strong> Activa <em>Auto-Acelerar</em> en el rango completo 1–15 y cuida el silencio exacto del Compás 15.'] },
+              { icon: '⏱️', title: 'Métricas irregulares (4/4 → 3/4 → 2/4)', bullets: ['<strong>3/4 (A, C y F):</strong> Acentúa claramente el tiempo 1 (<em>UN-dos-tres</em>). El pie nunca cambia de velocidad, solo agrupa de a tres.', '<strong>2/4 (Sección D):</strong> Los puentes <code>G#dim → F#m</code> y <code>E/G# → Dmaj7/F#</code> duran exactamente la mitad. Cuenta <em>UN-dos / UN-dos</em> en voz alta.', '<strong>Metrónomo guía:</strong> Mantén activado el acento agudo del pulso 1 hasta internalizar el cambio.'] },
+              { icon: '✋', title: 'Técnica de mano izquierda y púa alternada', bullets: ['<strong>Regla 1-dedo-por-traste:</strong> En toda la Intro (C.1–12), mantén el pulgar detrás del traste 10 para que dedos 1–4 alcancen 9–12 sin tensión.', '<strong>Púa alternada estricta:</strong> Sigue las flechas ↓ / ↑ de la tablatura; duplicará tu velocidad sin esfuerzo en las semicorcheas.', '<strong>Cejillas sin fatiga:</strong> Usa el peso del brazo izquierdo hacia tu cuerpo en lugar de apretar con fuerza de pinza.'] }
+            ]
+          }
+        },
+        // SECOND ENTRY IN SONG_LIBRARY: MINIMAL REUSABLE TEMPLATE
+        {
+          id: 'plantilla-base-vacia',
+          title: 'Plantilla Base Vacía (Demo Arquitectura)',
+          artist: 'Tu Próxima Canción — Editable vía JSON',
+          tuning: 'EADGBE',
+          chords: {
+            'Am': {
+              display: 'Am',
+              orig: { label: 'Am abierto', formula: 'x-0-2-2-1-0', baseFret: 1, frets: [-1,0,2,2,1,0], fingers: ['','','2','3','1',''], note: 'Acorde base de ejemplo.' },
+              beg:  { label: 'Am abierto', formula: 'x-0-2-2-1-0', baseFret: 1, frets: [-1,0,2,2,1,0], fingers: ['','','2','3','1',''], note: 'Acorde base de ejemplo.' }
+            },
+            'C': {
+              display: 'C',
+              orig: { label: 'C mayor', formula: 'x-3-2-0-1-0', baseFret: 1, frets: [-1,3,2,0,1,0], fingers: ['','3','2','','1',''], note: 'Mantén dedo 1 fijo desde Am.' },
+              beg:  { label: 'C mayor', formula: 'x-3-2-0-1-0', baseFret: 1, frets: [-1,3,2,0,1,0], fingers: ['','3','2','','1',''], note: 'Solo sube el dedo 3 a la 5ª cuerda traste 3.' }
+            },
+            'G': {
+              display: 'G',
+              orig: { label: 'G mayor', formula: '3-2-0-0-0-3', baseFret: 1, frets: [3,2,0,0,0,3], fingers: ['2','1','','','','3'], note: 'Sol mayor abierto.' },
+              beg:  { label: 'G mayor', formula: '3-2-0-0-0-3', baseFret: 1, frets: [3,2,0,0,0,3], fingers: ['2','1','','','','3'], note: 'Sol mayor abierto.' }
+            },
+            'Fmaj7': {
+              display: 'Fmaj7',
+              orig: { label: 'Fmaj7', formula: 'x-x-3-2-1-0', baseFret: 1, frets: [-1,-1,3,2,1,0], fingers: ['','','3','2','1',''], note: 'Alternativa dulce al Fa con cejilla.' },
+              beg:  { label: 'Fmaj7', formula: 'x-x-3-2-1-0', baseFret: 1, frets: [-1,-1,3,2,1,0], fingers: ['','','3','2','1',''], note: 'Escalerita fácil sin cejilla.' }
+            }
+          },
+          transitions: {
+            'Am->C': '¡Dedo ancla! Deja quietos los dedos 1 y 2; solo mueve el dedo 3 desde 3ª:2 hacia 5ª:3.',
+            'C->G': 'Sube dedos 2 y 3 una cuerda hacia arriba y coloca el anular/meñique en 1ª:3.',
+            'G->Fmaj7': 'Baja suavemente a la escalerita 3-2-1 dejando la 1ª cuerda al aire.'
+          },
+          sections: [
+            {
+              id: 'tpl-tab',
+              name: '1. Ejemplo Tablatura (2 Compases)',
+              subtitle: 'Arpegio simple en La menor',
+              type: 'tab',
+              level: 1,
+              meterLabel: '4/4',
+              measureRangeLabel: 'Compases 1–2',
+              baseBpm: 92,
+              description: 'Ejemplo mínimo de bloque tipo "tab". Abre el botón JSON arriba para ver cómo se declaran notas, dedos, técnicas y dirección de púa.',
+              loopPresets: [{ label: 'Todo (1–2)', start: 0, end: 1 }],
+              tabMeasures: [
+                {
+                  num: 1, beats: 4,
+                  coachTip: 'Mantén armada la postura de Am y arpegia de la 5ª a la 1ª cuerda.',
+                  events: [
+                    { beat: 0.0, dur: 0.5, notes: [{ s: 5, f: 0, finger: 0 }], pick: 'D', tech: 'let-ring' },
+                    { beat: 0.5, dur: 0.5, notes: [{ s: 4, f: 2, finger: 2 }], pick: 'D', tech: 'let-ring' },
+                    { beat: 1.0, dur: 0.5, notes: [{ s: 3, f: 2, finger: 3 }], pick: 'D', tech: 'let-ring' },
+                    { beat: 1.5, dur: 0.5, notes: [{ s: 2, f: 1, finger: 1 }], pick: 'U', tech: 'let-ring' },
+                    { beat: 2.0, dur: 1.0, notes: [{ s: 1, f: 0, finger: 0 }], pick: 'U', tech: 'let-ring' },
+                    { beat: 3.0, dur: 1.0, notes: [{ s: 2, f: 1, finger: 1 }], pick: 'D' }
+                  ]
+                },
+                {
+                  num: 2, beats: 4,
+                  coachTip: 'Cierre con acorde arpegiado en C mayor.',
+                  events: [
+                    { beat: 0.0, dur: 2.0, tech: 'arpeggio', pick: 'D', chordLabel: 'C', notes: [{ s: 5, f: 3, finger: 3 }, { s: 4, f: 2, finger: 2 }, { s: 3, f: 0, finger: 0 }, { s: 2, f: 1, finger: 1 }] },
+                    { beat: 2.0, dur: 2.0, notes: [], tech: 'rest' }
+                  ]
+                }
+              ]
+            },
+            {
+              id: 'tpl-chords',
+              name: '2. Ejemplo Progresión de Acordes',
+              subtitle: 'Am → C → G → Fmaj7',
+              type: 'chords',
+              level: 1,
+              meterLabel: '4/4',
+              measureRangeLabel: 'Compases 3–6',
+              baseBpm: 96,
+              description: 'Ejemplo mínimo de bloque tipo "chords". Copia este JSON desde el editor para crear tus propias canciones en minutos.',
+              chordMeasures: [
+                { num: 3, chord: 'Am',    beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 4, chord: 'C',     beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 5, chord: 'G',     beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' },
+                { num: 6, chord: 'Fmaj7', beats: 4, strum: '↓ · ↓ ↑ · ↑ ↓ ↑' }
+              ]
+            }
+          ],
+          specialChords: [
+            { key: 'Fmaj7', tag: 'Acorde Ejemplo', steps: ['Dedo 1 en 2ª:1, dedo 2 en 3ª:2, dedo 3 en 4ª:3.', 'Deja vibrar la 1ª cuerda al aire.'], mistake: 'Error común: tocar la 6ª cuerda al aire. Corrección: rasguea desde la 4ª cuerda.' }
+          ],
+          guide: {
+            title: 'Cómo crear tus propias canciones en GuitarLab Studio',
+            intro: 'Usa el botón "Adaptar / Nueva Canción (JSON)" en la barra superior para copiar esta plantilla, agregar tus acordes y tablaturas, y guardarla en tu navegador.',
+            stages: [
+              { badge: 'Paso 1', scope: 'Metadatos y Acordes', title: 'Define tu diccionario "chords"', text: 'Cada acorde tiene "orig" y "beg" con sus 6 trastes [6ª..1ª] (-1 muda, 0 al aire) y digitación.' },
+              { badge: 'Paso 2', scope: 'Bloques', title: 'Agrega secciones "tab", "chords" o "hybrid"', text: 'Puedes mezclar compases de 4/4, 3/4 y 2/4 libremente y agregar presets de Bucle A–B.' }
+            ],
+            techniques: [
+              { icon: '🧩', title: 'Motor 100% reutilizable', bullets: ['El reproductor Web Audio, los diagramas SVG, el Mástil en Vivo y el Laboratorio se generan automáticamente a partir del JSON.'] }
+            ]
+          }
+        }
+      ];
+
+      /* =====================================================================
+         PART B: GUITARLAB ENGINE
+         ===================================================================== */
+
+      // Pitch math: string 1=e4(329.63) ... string 6=E2(82.41)
+      const STRING_BASE_FREQ = { 6: 82.41, 5: 110.00, 4: 146.83, 3: 196.00, 2: 246.94, 1: 329.63 };
+      const STRING_BASE_MIDI = { 6: 40, 5: 45, 4: 50, 3: 55, 2: 59, 1: 64 };
+      const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+      function getNoteName(s, f) {
+        const midi = STRING_BASE_MIDI[s] + f;
+        return NOTE_NAMES[midi % 12];
+      }
+
+      /* ---------------------------------------------------------------------
+         1. ACOUSTIC GUITAR & METRONOME SYNTHESIZER (WEB AUDIO API)
+         --------------------------------------------------------------------- */
+      class AcousticEngine {
+        constructor() {
+          this.ctx = null;
+          this.master = null;
+        }
+
+        ensure() {
+          if (!this.ctx) {
+            const AC = window.AudioContext || window.webkitAudioContext;
+            this.ctx = new AC();
+            this.master = this.ctx.createGain();
+            this.master.gain.value = 0.72;
+            this.master.connect(this.ctx.destination);
+          }
+          if (this.ctx.state === 'suspended') {
+            this.ctx.resume();
+          }
+        }
+
+        playClick(isAccent = false, isCountIn = false) {
+          this.ensure();
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const g = this.ctx.createGain();
+          osc.type = 'triangle';
+          const f = isCountIn ? (isAccent ? 1360 : 980) : (isAccent ? 1180 : 770);
+          osc.frequency.setValueAtTime(f, now);
+          osc.frequency.exponentialRampToValueAtTime(f * 0.52, now + 0.045);
+
+          g.gain.setValueAtTime(isAccent ? 0.34 : 0.19, now);
+          g.gain.exponentialRampToValueAtTime(0.001, now + 0.055);
+          osc.connect(g);
+          g.connect(this.master);
+          osc.start(now);
+          osc.stop(now + 0.06);
+        }
+
+        playNote(s, f, options = {}) {
+          this.ensure();
+          const now = options.startTime || this.ctx.currentTime;
+          const tech = options.tech || '';
+          const freq = STRING_BASE_FREQ[s] * Math.pow(2, f / 12);
+
+          // Determine natural envelope based on articulation
+          let duration = options.duration || 1.1;
+          let vol = options.volume || 0.2;
+          let attack = 0.009;
+
+          if (tech === 'staccato') {
+            duration = Math.min(duration, 0.17);
+          } else if (tech === 'let-ring' || tech === 'tie') {
+            duration = Math.max(duration, 2.1);
+          } else if (tech === 'pull-off-target') {
+            attack = 0.018;
+            vol *= 0.85;
+          }
+
+          // Warm acoustic blend: triangle fundamental + gentle sawtooth overtone + subtle 2nd harmonic
+          const osc1 = this.ctx.createOscillator();
+          const osc2 = this.ctx.createOscillator();
+          const osc3 = this.ctx.createOscillator();
+          const filter = this.ctx.createBiquadFilter();
+          const g = this.ctx.createGain();
+
+          osc1.type = 'triangle';
+          osc1.frequency.setValueAtTime(freq, now);
+
+          osc2.type = 'sawtooth';
+          osc2.frequency.setValueAtTime(freq * 1.0012, now);
+
+          osc3.type = 'sine';
+          osc3.frequency.setValueAtTime(freq * 2, now);
+
+          const mix2 = this.ctx.createGain();
+          mix2.gain.value = 0.22;
+          const mix3 = this.ctx.createGain();
+          mix3.gain.value = 0.12;
+
+          filter.type = 'lowpass';
+          filter.frequency.setValueAtTime(Math.min(freq * 7.5, 4000), now);
+          filter.frequency.exponentialRampToValueAtTime(Math.max(freq * 1.7, 380), now + Math.min(duration, 1.4));
+          filter.Q.value = 1.1;
+
+          g.gain.setValueAtTime(0.0001, now);
+          g.gain.linearRampToValueAtTime(vol, now + attack);
+          g.gain.exponentialRampToValueAtTime(0.0008, now + duration);
+
+          osc1.connect(filter);
+          osc2.connect(mix2); mix2.connect(filter);
+          osc3.connect(mix3); mix3.connect(filter);
+          filter.connect(g);
+          g.connect(this.master);
+
+          osc1.start(now); osc2.start(now); osc3.start(now);
+          const stopAt = now + duration + 0.04;
+          osc1.stop(stopAt); osc2.stop(stopAt); osc3.stop(stopAt);
+        }
+
+        playTabEvent(ev, beatSec, isBeginnerMode) {
+          if (ev.tech === 'rest') return;
+          const notes = (isBeginnerMode && ev.begNotes) ? ev.begNotes : (ev.notes || []);
+          if (!notes.length) return;
+
+          this.ensure();
+          const baseTime = this.ctx.currentTime;
+          const durSec = Math.max(0.18, ev.dur * beatSec * 1.15);
+
+          if (ev.tech === 'arpeggio' || notes.length > 1) {
+            // Sort low string (6) to high string (1) with authentic 25ms micro-offset
+            const ordered = [...notes].sort((a, b) => b.s - a.s);
+            ordered.forEach((n, idx) => {
+              this.playNote(n.s, n.f, {
+                startTime: baseTime + idx * 0.025,
+                duration: Math.max(durSec, 1.45),
+                volume: 0.16,
+                tech: 'let-ring'
+              });
+            });
+          } else {
+            const n = notes[0];
+            this.playNote(n.s, n.f, {
+              startTime: baseTime,
+              duration: durSec,
+              volume: 0.21,
+              tech: ev.tech || ''
+            });
+          }
+        }
+
+        strumChordFrets(frets, mode = 'strum', volume = 0.14, duration = 1.4) {
+          this.ensure();
+          const now = this.ctx.currentTime;
+          const stepDelay = mode === 'arpeggio' ? 0.11 : 0.025;
+          const indices = mode === 'up' ? [5,4,3,2,1,0] : [0,1,2,3,4,5];
+          let idxCount = 0;
+
+          indices.forEach((i) => {
+            const f = frets[i];
+            if (f !== undefined && f >= 0) {
+              const s = 6 - i; // frets[0]=string 6 (E), frets[5]=string 1 (e)
+              this.playNote(s, f, {
+                startTime: now + idxCount * stepDelay,
+                duration: mode === 'arpeggio' ? 1.7 : duration,
+                volume,
+                tech: 'let-ring'
+              });
+              idxCount++;
+            }
+          });
+        }
+
+        playMutedStrum() {
+          this.ensure();
+          const now = this.ctx.currentTime;
+          const len = Math.floor(this.ctx.sampleRate * 0.045);
+          const buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+          const data = buf.getChannelData(0);
+          for (let i = 0; i < len; i++) {
+            data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (len * 0.25));
+          }
+          const src = this.ctx.createBufferSource();
+          src.buffer = buf;
+          const filter = this.ctx.createBiquadFilter();
+          filter.type = 'bandpass';
+          filter.frequency.value = 1250;
+          filter.Q.value = 1.4;
+          const g = this.ctx.createGain();
+          g.gain.setValueAtTime(0.24, now);
+          g.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
+
+          src.connect(filter);
+          filter.connect(g);
+          g.connect(this.master);
+          src.start(now);
+        }
+      }
+
+      const audio = new AcousticEngine();
+
+      /* ---------------------------------------------------------------------
+         2. STATE & PERSISTENCE
+         --------------------------------------------------------------------- */
+      const STORE_STATE = 'guitarlab_state_v2';
+      const STORE_CUSTOM_SONGS = 'guitarlab_custom_songs_v2';
+
+      let songLibrary = [...DEFAULT_SONG_LIBRARY];
+
+      function loadCustomSongs() {
+        try {
+          const raw = localStorage.getItem(STORE_CUSTOM_SONGS);
+          if (raw) {
+            const custom = JSON.parse(raw);
+            if (Array.isArray(custom)) {
+              custom.forEach((cs) => {
+                const idx = songLibrary.findIndex(s => s.id === cs.id);
+                if (idx >= 0) songLibrary[idx] = cs;
+                else songLibrary.push(cs);
+              });
+            }
+          }
+        } catch (e) { /* ignore */ }
+      }
+
+      loadCustomSongs();
+
+      const state = {
+        theme: 'dark',
+        activeTab: 'practice',
+        songId: songLibrary[0].id,
+        sectionIndex: 0,
+        voicingMode: 'beg', // 'beg' | 'orig'
+        speedPct: 55,
+        isPlaying: false,
+        isCountingIn: false,
+        countInRemaining: 0,
+        countInEnabled: true,
+        metronomeEnabled: true,
+        guitarEnabled: true,
+        autoSpeedEnabled: false,
+        loopCount: 0,
+
+        // Pointers
+        measureIdx: 0,       // index inside active measure list (tab or chord)
+        hybridPlayTarget: 'tab', // for hybrid sections: 'tab' or 'chords'
+        step16: 0,           // 0 .. (beats*4 - 1) in 16th-note resolution
+        activeEventKey: null, // `${mIdx}:${evIdx}`
+        activeFretNotes: [], // [{s, f, finger}]
+
+        // A-B Loop (indices into current tabMeasures)
+        loopStart: 0,
+        loopEnd: 14,
+
+        // User progress & lab modes
+        mastered: {},
+        labModes: {}
+      };
+
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORE_STATE) || '{}');
+        if (saved.theme) state.theme = saved.theme;
+        if (saved.mastered) state.mastered = saved.mastered;
+      } catch (e) { /* ignore */ }
+
+      function saveState() {
+        try {
+          localStorage.setItem(STORE_STATE, JSON.stringify({
+            theme: state.theme,
+            mastered: state.mastered
+          }));
+        } catch (e) { /* ignore */ }
+      }
+
+      /* ---------------------------------------------------------------------
+         3. DATA ACCESSORS
+         --------------------------------------------------------------------- */
+      function getSong() {
+        return songLibrary.find(s => s.id === state.songId) || songLibrary[0];
+      }
+
+      function getSection() {
+        const song = getSong();
+        return song.sections[state.sectionIndex] || song.sections[0];
+      }
+
+      function isTabActive() {
+        const sec = getSection();
+        return sec.type === 'tab' || (sec.type === 'hybrid' && state.hybridPlayTarget === 'tab');
+      }
+
+      function getActiveMeasures() {
+        const sec = getSection();
+        if (sec.type === 'tab') return sec.tabMeasures || [];
+        if (sec.type === 'chords') return sec.chordMeasures || [];
+        // hybrid
+        return state.hybridPlayTarget === 'tab' ? (sec.tabMeasures || []) : (sec.chordMeasures || []);
+      }
+
+      function getEffectiveBpm() {
+        const sec = getSection();
+        return Math.max(30, Math.round((sec.baseBpm * state.speedPct) / 100));
+      }
+
+      function getChordVoicing(key, modeOverride = null) {
+        const song = getSong();
+        const entry = song.chords && song.chords[key];
+        if (!entry) return null;
+        const m = modeOverride || state.voicingMode;
+        return m === 'beg' ? (entry.beg || entry.orig) : entry.orig;
+      }
+
+      function showToast(msg) {
+        const el = document.getElementById('toast');
+        el.textContent = msg;
+        el.classList.remove('opacity-0', 'translate-y-2');
+        el.classList.add('opacity-100', 'translate-y-0');
+        clearTimeout(showToast._t);
+        showToast._t = setTimeout(() => {
+          el.classList.add('opacity-0', 'translate-y-2');
+          el.classList.remove('opacity-100', 'translate-y-0');
+        }, 2500);
+      }
+
+      /* ---------------------------------------------------------------------
+         4. SVG RENDERERS: CHORD DIAGRAM, LIVE FRETBOARD, 6-STRING TABLATURE
+         --------------------------------------------------------------------- */
+
+      // 4A. SVG Guitar Chord Diagram
+      function renderChordSVG(voicing, size = 'large') {
+        if (!voicing) return '';
+        const isLarge = size === 'large';
+        const w = isLarge ? 182 : 144;
+        const h = isLarge ? 204 : 164;
+        const pL = isLarge ? 32 : 26;
+        const pR = isLarge ? 18 : 14;
+        const pT = isLarge ? 32 : 26;
+        const pB = isLarge ? 18 : 14;
+
+        const gW = w - pL - pR;
+        const gH = h - pT - pB;
+        const sGap = gW / 5;
+        const fGap = gH / 5;
+        const r = isLarge ? 10 : 8;
+        const baseFret = voicing.baseFret || 1;
+
+        let svg = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" class="select-none">`;
+
+        if (baseFret > 1) {
+          svg += `<text x="${pL - 8}" y="${pT + fGap * 0.5 + 4}" text-anchor="end" fill="var(--accent)" font-family="JetBrains Mono, monospace" font-size="${isLarge ? 11.5 : 10}" font-weight="700">${baseFret}fr</text>`;
+        }
+
+        // Nut or top fret
+        if (baseFret === 1) {
+          svg += `<rect x="${pL - 1}" y="${pT - 3}" width="${gW + 2}" height="5" rx="2" fill="var(--nut-color)" />`;
+        } else {
+          svg += `<line x1="${pL}" y1="${pT}" x2="${pL + gW}" y2="${pT}" stroke="var(--fret-line)" stroke-width="1.5" />`;
+        }
+
+        // Frets
+        for (let f = 1; f <= 5; f++) {
+          const y = pT + f * fGap;
+          svg += `<line x1="${pL}" y1="${y}" x2="${pL + gW}" y2="${y}" stroke="var(--fret-line)" stroke-width="1.3" />`;
+        }
+
+        // Strings
+        for (let s = 0; s < 6; s++) {
+          const x = pL + s * sGap;
+          svg += `<line x1="${x}" y1="${pT}" x2="${x}" y2="${pT + gH}" stroke="var(--string-line)" stroke-width="${(1.9 - s * 0.15).toFixed(2)}" />`;
+        }
+
+        // Open / Muted
+        voicing.frets.forEach((f, s) => {
+          const x = pL + s * sGap;
+          const y = pT - 12;
+          if (f === -1) {
+            svg += `<text x="${x}" y="${y + 3}" text-anchor="middle" fill="var(--text-faint)" font-family="JetBrains Mono, monospace" font-size="${isLarge ? 12 : 10}" font-weight="600">×</text>`;
+          } else if (f === 0) {
+            svg += `<circle cx="${x}" cy="${y - 1}" r="${isLarge ? 4.2 : 3.5}" fill="none" stroke="var(--text-muted)" stroke-width="1.5" />`;
+          }
+        });
+
+        // Barre
+        if (voicing.barre) {
+          const rel = voicing.barre.fret - baseFret;
+          if (rel >= 0 && rel < 5) {
+            const x1 = pL + voicing.barre.from * sGap - r * 0.85;
+            const x2 = pL + voicing.barre.to * sGap + r * 0.85;
+            const y = pT + (rel + 0.5) * fGap - r * 0.82;
+            const bh = r * 1.64;
+            svg += `<rect x="${x1}" y="${y}" width="${x2 - x1}" height="${bh}" rx="${bh / 2}" fill="var(--accent)" opacity="0.92" />`;
+            svg += `<text x="${(x1 + x2) / 2}" y="${y + bh / 2 + 3.8}" text-anchor="middle" fill="var(--dot-text)" font-family="JetBrains Mono, monospace" font-size="${isLarge ? 10.5 : 9}" font-weight="700">1</text>`;
+          }
+        }
+
+        // Finger dots
+        voicing.frets.forEach((f, s) => {
+          if (f > 0) {
+            if (voicing.barre && f === voicing.barre.fret && s >= voicing.barre.from && s <= voicing.barre.to && voicing.fingers[s] === '1') return;
+            const rel = f - baseFret;
+            if (rel >= 0 && rel < 5) {
+              const cx = pL + s * sGap;
+              const cy = pT + (rel + 0.5) * fGap;
+              const finger = voicing.fingers[s] || '';
+              svg += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="var(--accent)" />`;
+              if (finger) {
+                svg += `<text x="${cx}" y="${cy + (isLarge ? 3.8 : 3.2)}" text-anchor="middle" fill="var(--dot-text)" font-family="JetBrains Mono, monospace" font-size="${isLarge ? 10.5 : 9}" font-weight="700">${finger}</text>`;
+              }
+            }
+          }
+        });
+
+        // Bottom string labels
+        ['E','A','D','G','B','e'].forEach((lbl, s) => {
+          svg += `<text x="${pL + s * sGap}" y="${h - 3}" text-anchor="middle" fill="var(--text-faint)" font-family="JetBrains Mono, monospace" font-size="9">${lbl}</text>`;
+        });
+
+        svg += `</svg>`;
+        return svg;
+      }
+
+      // 4B. Live Fretboard Visualizer (Frets 0 to 14)
+      function renderLiveFretboard() {
+        const wrap = document.getElementById('fretboard-svg-wrap');
+        const infoEl = document.getElementById('fretboard-active-info');
+        const notes = state.activeFretNotes || [];
+
+        const W = 820;
+        const H = 158;
+        const pL = 50;
+        const pR = 16;
+        const pT = 20;
+        const pB = 26;
+        const totalFrets = 14; // 1..14 plus open column 0
+        const fretW = (W - pL - pR) / totalFrets;
+        const strH = (H - pT - pB) / 5;
+        const stringNames = ['e (1)', 'B (2)', 'G (3)', 'D (4)', 'A (5)', 'E (6)'];
+
+        let svg = `<svg viewBox="0 0 ${W} ${H}" class="w-full min-w-[640px] h-auto select-none" xmlns="http://www.w3.org/2000/svg">`;
+
+        // Wood neck background
+        svg += `<rect x="${pL}" y="${pT - 6}" width="${W - pL - pR}" height="${H - pT - pB + 12}" rx="6" fill="var(--wood-bg)" stroke="var(--border-color)" stroke-width="1" />`;
+
+        // Position IX highlight zone (frets 9..12) subtle hint when in Cantata Intro
+        const sec = getSection();
+        if (sec.id === 'sec-intro') {
+          const x9 = pL + 8 * fretW;
+          svg += `<rect x="${x9}" y="${pT - 5}" width="${4 * fretW}" height="${H - pT - pB + 10}" fill="var(--accent)" opacity="0.06" />`;
+        }
+
+        // Inlay dots (frets 3, 5, 7, 9, 12 double)
+        [3, 5, 7, 9].forEach((f) => {
+          const cx = pL + (f - 0.5) * fretW;
+          const cy = pT + 2.5 * strH;
+          svg += `<circle cx="${cx}" cy="${cy}" r="5.5" fill="var(--inlay-color)" />`;
+        });
+        const x12 = pL + 11.5 * fretW;
+        svg += `<circle cx="${x12}" cy="${pT + 1.5 * strH}" r="5.2" fill="var(--inlay-color)" />`;
+        svg += `<circle cx="${x12}" cy="${pT + 3.5 * strH}" r="5.2" fill="var(--inlay-color)" />`;
+
+        // Nut (thick line at fret 0)
+        svg += `<rect x="${pL - 3}" y="${pT - 6}" width="6" height="${H - pT - pB + 12}" rx="2" fill="var(--nut-color)" />`;
+
+        // Fret wires & numbers
+        for (let f = 1; f <= totalFrets; f++) {
+          const x = pL + f * fretW;
+          svg += `<line x1="${x}" y1="${pT - 5}" x2="${x}" y2="${H - pB + 5}" stroke="var(--fret-line)" stroke-width="1.5" />`;
+          const isHighlight = [3, 5, 7, 9, 12].includes(f);
+          svg += `<text x="${x - fretW * 0.5}" y="${H - 7}" text-anchor="middle" fill="${isHighlight ? 'var(--accent)' : 'var(--text-faint)'}" font-family="JetBrains Mono, monospace" font-size="10" font-weight="${isHighlight ? '700' : '500'}">${f}</text>`;
+        }
+        svg += `<text x="${pL - 14}" y="${H - 7}" text-anchor="middle" fill="var(--text-faint)" font-family="JetBrains Mono, monospace" font-size="10">0</text>`;
+
+        // 6 Strings (top = 1:e, bottom = 6:E)
+        for (let i = 0; i < 6; i++) {
+          const y = pT + i * strH;
+          const thickness = 1.0 + i * 0.35;
+          svg += `<line x1="${pL}" y1="${y}" x2="${W - pR}" y2="${y}" stroke="var(--string-line)" stroke-width="${thickness.toFixed(2)}" />`;
+          svg += `<text x="6" y="${y + 3.5}" fill="var(--text-muted)" font-family="JetBrains Mono, monospace" font-size="9.5" font-weight="600">${stringNames[i]}</text>`;
+        }
+
+        // Active Note Markers
+        notes.forEach((n) => {
+          const row = n.s - 1; // s=1 -> row 0 (top), s=6 -> row 5 (bottom)
+          const cy = pT + row * strH;
+          const cx = n.f === 0 ? (pL - 14) : (pL + (n.f - 0.5) * fretW);
+          const lbl = n.finger && n.finger > 0 ? `d${n.finger}` : '0';
+
+          // Outer glow ring
+          svg += `<circle cx="${cx}" cy="${cy}" r="14" fill="var(--accent)" opacity="0.25" />`;
+          svg += `<circle cx="${cx}" cy="${cy}" r="10.5" fill="var(--accent)" stroke="var(--bg-card)" stroke-width="1.5" />`;
+          svg += `<text x="${cx}" y="${cy + 3.6}" text-anchor="middle" fill="var(--dot-text)" font-family="JetBrains Mono, monospace" font-size="9.5" font-weight="700">${lbl}</text>`;
+        });
+
+        svg += `</svg>`;
+        wrap.innerHTML = svg;
+
+        // Update Active Info Pill
+        if (!notes.length) {
+          infoEl.textContent = state.isPlaying ? 'Silencio / Respiro' : 'Clic en una nota o pulsa ▶';
+        } else if (notes.length === 1) {
+          const n = notes[0];
+          const pitch = getNoteName(n.s, n.f);
+          const fTxt = n.finger > 0 ? `Dedo ${n.finger}` : 'Al aire';
+          infoEl.textContent = `Cuerda ${n.s} · Traste ${n.f} (${pitch}) · ${fTxt}`;
+        } else {
+          const desc = notes.map(n => `c${n.s}:${n.f}`).join(' ');
+          infoEl.textContent = `Acorde / Arpegio: ${desc}`;
+        }
+      }
+
+      // 4C. Interactive Multi-Measure SVG Tablature (All 15 measures visible!)
+      function renderTablatureGrid() {
+        const sec = getSection();
+        const measures = sec.tabMeasures || [];
+        const grid = document.getElementById('tab-measures-grid');
+        grid.innerHTML = '';
+
+        const isBeg = state.voicingMode === 'beg';
+        const stringLabels = ['e', 'B', 'G', 'D', 'A', 'E'];
+
+        measures.forEach((m, mIdx) => {
+          const inLoop = mIdx >= state.loopStart && mIdx <= state.loopEnd;
+          const isCurrent = isTabActive() && mIdx === state.measureIdx;
+
+          const box = document.createElement('div');
+          box.className = `tab-measure-box rounded-xl p-3 space-y-1.5 ${inLoop ? 'in-loop' : 'out-of-loop'} ${isCurrent ? 'active-measure' : ''}`;
+          box.dataset.midx = mIdx;
+
+          // Header row for each measure
+          const header = document.createElement('div');
+          header.className = 'flex items-center justify-between gap-2 text-[11px]';
+          header.innerHTML = `
+            <button type="button" class="tab-jump-btn flex items-center gap-1.5 font-mono font-semibold cursor-pointer ${isCurrent ? 'text-accent' : 'text-[var(--text-main)]'}">
+              <span>Compás ${m.num}</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded surface-elevated text-muted">${m.beats}/4</span>
+            </button>
+            <span class="font-mono text-[10px] text-faint">${inLoop ? 'En bucle A–B' : 'Fuera de bucle'}</span>
+          `;
+          header.querySelector('.tab-jump-btn').addEventListener('click', () => {
+            if (sec.type === 'hybrid') state.hybridPlayTarget = 'tab';
+            jumpToTabMeasure(mIdx);
+          });
+          box.appendChild(header);
+
+          // SVG Staff (6 lines)
+          const W = 420;
+          const H = 148;
+          const pL = 24;
+          const pR = 14;
+          const pT = 26;
+          const strGap = 15.5;
+          const staffH = strGap * 5;
+          const usableW = W - pL - pR;
+          const beats = m.beats || 4;
+
+          let svg = `<svg viewBox="0 0 ${W} ${H}" class="w-full h-auto select-none" xmlns="http://www.w3.org/2000/svg">`;
+
+          // Beat guide vertical ticks
+          for (let b = 0; b < beats; b++) {
+            const bx = pL + (b / beats) * usableW + 8;
+            svg += `<line x1="${bx}" y1="${pT - 2}" x2="${bx}" y2="${pT + staffH + 2}" stroke="var(--border-color)" stroke-width="0.8" stroke-dasharray="2 3" />`;
+          }
+
+          // Barlines
+          svg += `<line x1="${pL}" y1="${pT}" x2="${pL}" y2="${pT + staffH}" stroke="var(--border-strong)" stroke-width="1.6" />`;
+          svg += `<line x1="${W - pR}" y1="${pT}" x2="${W - pR}" y2="${pT + staffH}" stroke="var(--border-strong)" stroke-width="1.8" />`;
+
+          // 6 horizontal string lines
+          for (let s = 0; s < 6; s++) {
+            const y = pT + s * strGap;
+            svg += `<line x1="${pL}" y1="${y}" x2="${W - pR}" y2="${y}" stroke="var(--string-line)" stroke-width="0.9" opacity="0.7" />`;
+            svg += `<text x="9" y="${y + 3.5}" text-anchor="middle" fill="var(--text-faint)" font-family="JetBrains Mono, monospace" font-size="9.5" font-weight="600">${stringLabels[s]}</text>`;
+          }
+
+          // Playhead bar if currently playing this measure
+          if (isCurrent && state.isPlaying && !state.isCountingIn) {
+            const curBeatPos = state.step16 / 4;
+            const px = pL + (curBeatPos / beats) * usableW + 14;
+            svg += `<line x1="${px}" y1="${pT - 12}" x2="${px}" y2="${pT + staffH + 24}" stroke="var(--accent)" stroke-width="2" opacity="0.55" />`;
+          }
+
+          // Events
+          (m.events || []).forEach((ev, evIdx) => {
+            const x = pL + (ev.beat / beats) * usableW + 14;
+            const evKey = `${mIdx}:${evIdx}`;
+            const isActiveEv = state.activeEventKey === evKey;
+
+            svg += `<g class="tab-event-group" data-midx="${mIdx}" data-evidx="${evIdx}">`;
+
+            if (ev.tech === 'rest') {
+              const ry = pT + 2.5 * strGap;
+              const sym = ev.dur >= 4 ? '𝄻 (4t)' : ev.dur >= 1 ? '𝄽' : '𝄾';
+              svg += `<rect x="${x - 16}" y="${ry - 10}" width="32" height="20" rx="5" fill="${isActiveEv ? 'var(--accent-soft)' : 'var(--bg-elevated)'}" stroke="${isActiveEv ? 'var(--accent)' : 'var(--border-color)'}" stroke-width="1" />`;
+              svg += `<text x="${x}" y="${ry + 4}" text-anchor="middle" fill="${isActiveEv ? 'var(--accent)' : 'var(--text-muted)'}" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="600">${sym}</text>`;
+            } else {
+              const notes = (isBeg && ev.begNotes) ? ev.begNotes : (ev.notes || []);
+
+              // Chord label or technique badge above staff
+              if (ev.chordLabel) {
+                const lbl = (isBeg && ev.begNotes) ? `${ev.chordLabel}*` : ev.chordLabel;
+                svg += `<text x="${x}" y="${pT - 12}" text-anchor="middle" fill="var(--accent)" font-family="JetBrains Mono, monospace" font-size="9" font-weight="700">${lbl}</text>`;
+              } else if (ev.tech === 'staccato') {
+                svg += `<circle cx="${x}" cy="${pT - 9}" r="2.2" fill="var(--accent)" />`;
+              } else if (ev.tech === 'pull-off') {
+                const nextEv = m.events[evIdx + 1];
+                if (nextEv) {
+                  const nx = pL + (nextEv.beat / beats) * usableW + 14;
+                  const midX = (x + nx) / 2;
+                  svg += `<path d="M ${x} ${pT - 6} Q ${midX} ${pT - 15} ${nx} ${pT - 6}" fill="none" stroke="var(--accent)" stroke-width="1.2" />`;
+                  svg += `<text x="${midX}" y="${pT - 15}" text-anchor="middle" fill="var(--accent)" font-family="JetBrains Mono, monospace" font-size="8.5" font-weight="700">${isBeg ? 'p(opc)' : 'p'}</text>`;
+                }
+              } else if (ev.tech === 'let-ring' && evIdx === 0) {
+                svg += `<text x="${x}" y="${pT - 11}" text-anchor="start" fill="var(--text-muted)" font-family="JetBrains Mono, monospace" font-size="8.5" font-style="italic">let ring ───</text>`;
+              }
+
+              // Arpeggio vertical wave symbol
+              if (ev.tech === 'arpeggio' && notes.length > 1) {
+                const topS = Math.min(...notes.map(n => n.s));
+                const botS = Math.max(...notes.map(n => n.s));
+                const y1 = pT + (topS - 1) * strGap;
+                const y2 = pT + (botS - 1) * strGap;
+                svg += `<line x1="${x - 12}" y1="${y1}" x2="${x - 12}" y2="${y2}" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="2 2" />`;
+              }
+
+              // Draw each fret pill on its string
+              notes.forEach((n) => {
+                const y = pT + (n.s - 1) * strGap;
+                const pillW = n.f >= 10 ? 19 : 15;
+                svg += `<rect class="tab-note-pill" x="${x - pillW / 2}" y="${y - 7}" width="${pillW}" height="14" rx="4" fill="${isActiveEv ? 'var(--accent)' : 'var(--bg-card)'}" stroke="${isActiveEv ? 'var(--accent)' : 'var(--border-strong)'}" stroke-width="1.1" />`;
+                svg += `<text x="${x}" y="${y + 3.6}" text-anchor="middle" fill="${isActiveEv ? 'var(--dot-text)' : 'var(--text-main)'}" font-family="JetBrains Mono, monospace" font-size="10" font-weight="700">${n.f}</text>`;
+              });
+
+              // Bottom row: Left-hand finger + Pick direction
+              const mainFinger = notes.length === 1 && notes[0].finger > 0 ? `d${notes[0].finger}` : (notes.length === 1 && notes[0].finger === 0 ? '0' : '');
+              const pickSym = ev.pick === 'D' ? '↓' : ev.pick === 'U' ? '↑' : '';
+
+              if (mainFinger) {
+                svg += `<text x="${x}" y="${pT + staffH + 14}" text-anchor="middle" fill="var(--text-muted)" font-family="JetBrains Mono, monospace" font-size="8.5">${mainFinger}</text>`;
+              }
+              if (pickSym) {
+                svg += `<text x="${x}" y="${pT + staffH + 26}" text-anchor="middle" fill="var(--accent)" font-family="JetBrains Mono, monospace" font-size="10" font-weight="700">${pickSym}</text>`;
+              }
+            }
+
+            svg += `</g>`;
+          });
+
+          svg += `</svg>`;
+
+          const svgWrap = document.createElement('div');
+          svgWrap.innerHTML = svg;
+
+          // Bind click on every individual note/event!
+          svgWrap.querySelectorAll('.tab-event-group').forEach((g) => {
+            g.addEventListener('click', (e) => {
+              e.stopPropagation();
+              const mi = Number(g.dataset.midx);
+              const ei = Number(g.dataset.evidx);
+              auditionTabEvent(mi, ei);
+            });
+          });
+
+          box.appendChild(svgWrap);
+          grid.appendChild(box);
+        });
+      }
+
+      /* ---------------------------------------------------------------------
+         5. UI RENDERERS (SECTIONS, TIMELINE, CHORDS, COACH, LAB, GUIDE)
+         --------------------------------------------------------------------- */
+      function renderSongSelector() {
+        const sel = document.getElementById('song-selector');
+        sel.innerHTML = '';
+        songLibrary.forEach((s) => {
+          const opt = document.createElement('option');
+          opt.value = s.id;
+          opt.textContent = s.title;
+          if (s.id === state.songId) opt.selected = true;
+          sel.appendChild(opt);
+        });
+
+        const song = getSong();
+        document.getElementById('header-song-title').textContent = song.title;
+        document.getElementById('header-tuning').textContent = song.tuning || 'EADGBE';
+        document.getElementById('song-artist-meta').textContent = song.artist || '';
+      }
+
+      function updateGlobalProgress() {
+        const song = getSong();
+        const total = song.sections.length;
+        const done = song.sections.filter(s => state.mastered[`${song.id}:${s.id}`]).length;
+        const pct = total ? Math.round((done / total) * 100) : 0;
+        document.getElementById('global-progress-text').textContent = `${done}/${total}`;
+        document.getElementById('mobile-progress-text').textContent = `${done}/${total}`;
+        document.getElementById('global-progress-bar').style.width = `${pct}%`;
+      }
+
+      function renderSectionList() {
+        const song = getSong();
+        const list = document.getElementById('section-list');
+        list.innerHTML = '';
+
+        song.sections.forEach((sec, idx) => {
+          const active = idx === state.sectionIndex;
+          const mKey = `${song.id}:${sec.id}`;
+          const done = !!state.mastered[mKey];
+
+          const row = document.createElement('div');
+          row.className = `p-2.5 rounded-xl border transition-all flex items-center justify-between gap-2 cursor-pointer ${
+            active ? 'bg-accent-soft border-[var(--accent)]' : 'surface-subtle hover:border-[var(--border-strong)]'
+          }`;
+
+          const typeIcon = sec.type === 'tab' ? 'TAB' : sec.type === 'hybrid' ? 'TAB+AC' : 'ACORDES';
+
+          row.innerHTML = `
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-1.5">
+                <span class="font-semibold text-xs sm:text-sm truncate ${active ? 'text-accent' : ''}">${sec.name}</span>
+              </div>
+              <div class="flex items-center gap-1.5 mt-0.5">
+                <span class="font-mono text-[9.5px] px-1.5 py-0.2 rounded surface-elevated text-accent">${typeIcon}</span>
+                <span class="font-mono text-[9.5px] text-faint">N${sec.level || 1} · ${sec.meterLabel}</span>
+              </div>
+            </div>
+            <label class="shrink-0 p-1 cursor-pointer" title="Marcar bloque dominado">
+              <input type="checkbox" ${done ? 'checked' : ''} class="sec-chk accent-[#D77757] w-4 h-4 rounded cursor-pointer" />
+            </label>
+          `;
+
+          row.addEventListener('click', (e) => {
+            if (e.target.closest('label') || e.target.classList.contains('sec-chk')) return;
+            selectSection(idx);
+          });
+
+          row.querySelector('.sec-chk').addEventListener('change', (e) => {
+            e.stopPropagation();
+            state.mastered[mKey] = e.target.checked;
+            saveState();
+            updateGlobalProgress();
+            if (e.target.checked) showToast(`¡${sec.name} marcado como dominado!`);
+          });
+
+          list.appendChild(row);
+        });
+      }
+
+      function renderSectionHeaderAndSpeed() {
+        const sec = getSection();
+        document.getElementById('sec-level-badge').textContent = `Nivel ${sec.level || 1}`;
+        document.getElementById('sec-meter-badge').textContent = sec.meterLabel || '4/4';
+        document.getElementById('sec-measures-badge').textContent = sec.measureRangeLabel || '';
+        document.getElementById('sec-bpm-badge').textContent = `Base: ${sec.baseBpm} BPM`;
+        document.getElementById('sec-title').textContent = `${sec.name} — ${sec.subtitle || ''}`;
+        document.getElementById('sec-desc').textContent = sec.description || '';
+
+        const helper = document.getElementById('mode-helper');
+        if (state.voicingMode === 'beg') {
+          helper.textContent = sec.type === 'tab'
+            ? 'Pull-offs opcionales + acordes de cierre fáciles'
+            : 'Acordes adaptados sin cejillas extremas';
+        } else {
+          helper.textContent = 'Voicings y articulaciones originales de Spinetta';
+        }
+
+        updateSpeedUI();
+      }
+
+      function updateSpeedUI() {
+        const bpm = getEffectiveBpm();
+        document.getElementById('speed-display').textContent = `${state.speedPct}% · ${bpm} BPM`;
+        document.getElementById('speed-slider').value = state.speedPct;
+        document.querySelectorAll('.speed-preset').forEach((btn) => {
+          const match = Number(btn.dataset.speed) === state.speedPct;
+          btn.classList.toggle('border-[var(--accent)]', match);
+          btn.classList.toggle('text-accent', match);
+        });
+      }
+
+      function renderLoopControls() {
+        const sec = getSection();
+        const measures = sec.tabMeasures || [];
+        if (!measures.length) return;
+
+        const startSel = document.getElementById('loop-start-select');
+        const endSel = document.getElementById('loop-end-select');
+        startSel.innerHTML = '';
+        endSel.innerHTML = '';
+
+        measures.forEach((m, idx) => {
+          const o1 = document.createElement('option');
+          o1.value = idx;
+          o1.textContent = `C.${m.num}`;
+          if (idx === state.loopStart) o1.selected = true;
+          startSel.appendChild(o1);
+
+          const o2 = document.createElement('option');
+          o2.value = idx;
+          o2.textContent = `C.${m.num}`;
+          if (idx === state.loopEnd) o2.selected = true;
+          endSel.appendChild(o2);
+        });
+
+        const mS = measures[state.loopStart]?.num ?? 1;
+        const mE = measures[state.loopEnd]?.num ?? measures.length;
+        document.getElementById('loop-range-pill').textContent = `C.${mS} → C.${mE}`;
+
+        const presetsWrap = document.getElementById('loop-presets');
+        presetsWrap.innerHTML = '';
+        const presets = sec.loopPresets || [{ label: `Todo (${mS}–${mE})`, start: 0, end: measures.length - 1 }];
+
+        presets.forEach((p) => {
+          const isMatch = state.loopStart === p.start && state.loopEnd === p.end;
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = `px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors cursor-pointer ${
+            isMatch ? 'bg-accent text-[#141413] font-semibold' : 'surface-elevated hover:border-[var(--accent)] text-muted'
+          }`;
+          btn.textContent = p.label;
+          btn.addEventListener('click', () => {
+            setLoopRange(p.start, p.end);
+          });
+          presetsWrap.appendChild(btn);
+        });
+      }
+
+      function renderChordWorkspace() {
+        const sec = getSection();
+        const measures = sec.chordMeasures || [];
+        if (!measures.length) return;
+
+        const timeline = document.getElementById('chord-timeline');
+        timeline.innerHTML = '';
+        const song = getSong();
+        const activeChordIdx = (!isTabActive()) ? Math.min(state.measureIdx, measures.length - 1) : 0;
+        const curBeatInt = Math.floor(state.step16 / 4);
+
+        measures.forEach((m, idx) => {
+          const isActive = (!isTabActive()) && idx === activeChordIdx;
+          const display = song.chords[m.chord]?.display || m.chord;
+
+          let dots = '';
+          for (let b = 0; b < m.beats; b++) {
+            const lit = isActive && state.isPlaying && !state.isCountingIn && curBeatInt === b;
+            dots += `<span class="beat-dot ${b === 0 ? 'accent-beat' : ''} ${lit ? 'active' : ''}"></span>`;
+          }
+
+          const card = document.createElement('button');
+          card.type = 'button';
+          card.className = `measure-card rounded-xl p-3 text-left flex flex-col justify-between gap-1.5 cursor-pointer ${isActive ? 'active' : ''}`;
+          card.innerHTML = `
+            <div class="flex items-center justify-between w-full">
+              <span class="font-mono text-[10px] ${m.beats !== 4 ? 'text-accent font-bold' : 'text-muted'}">C.${m.num} · ${m.beats}/4</span>
+              <div class="flex items-center gap-1">${dots}</div>
+            </div>
+            <div class="font-serif text-lg font-bold truncate">${display}</div>
+            <div class="font-mono text-[10px] text-muted truncate">${m.strum || ''}</div>
+          `;
+          card.addEventListener('click', () => {
+            if (sec.type === 'hybrid') state.hybridPlayTarget = 'chords';
+            jumpToChordMeasure(idx);
+          });
+          timeline.appendChild(card);
+        });
+
+        // Current & Next Chord Diagrams
+        const curM = measures[activeChordIdx] || measures[0];
+        const nextM = measures[(activeChordIdx + 1) % measures.length];
+        const curV = getChordVoicing(curM.chord);
+        const nextV = getChordVoicing(nextM.chord);
+
+        document.getElementById('cur-chord-svg').innerHTML = renderChordSVG(curV, 'large');
+        document.getElementById('cur-chord-name').textContent = song.chords[curM.chord]?.display || curM.chord;
+        document.getElementById('cur-chord-formula').textContent = curV?.formula || '';
+        document.getElementById('cur-chord-badge').textContent = state.voicingMode === 'beg' ? 'Modo Principiante' : 'Voicing Original';
+        document.getElementById('cur-chord-note').textContent = curV?.note || '';
+
+        document.getElementById('next-chord-svg').innerHTML = renderChordSVG(nextV, 'medium');
+        document.getElementById('next-chord-name').textContent = song.chords[nextM.chord]?.display || nextM.chord;
+        document.getElementById('next-chord-formula').textContent = nextV?.formula || '';
+      }
+
+      function renderCoach() {
+        const sec = getSection();
+        const song = getSong();
+        const tag = document.getElementById('coach-tag');
+        const text = document.getElementById('coach-text');
+
+        if (isTabActive() && sec.tabMeasures?.length) {
+          const m = sec.tabMeasures[Math.min(state.measureIdx, sec.tabMeasures.length - 1)];
+          tag.textContent = `Compás ${m.num} (${m.beats}/4)`;
+          text.textContent = m.coachTip || 'Mantén una digitación económica (1 dedo por traste) y púa alternada relajada.';
+        } else if (sec.chordMeasures?.length) {
+          const list = sec.chordMeasures;
+          const idx = Math.min(state.measureIdx, list.length - 1);
+          const cur = list[idx];
+          const next = list[(idx + 1) % list.length];
+          const curName = song.chords[cur.chord]?.display || cur.chord;
+          const nextName = song.chords[next.chord]?.display || next.chord;
+          const pairKey = `${cur.chord}->${next.chord}`;
+
+          tag.textContent = `C.${cur.num}: ${curName} → ${nextName}`;
+          const tip = (song.transitions && song.transitions[pairKey])
+            || (next.beats === 2
+              ? `¡Atento! El próximo compás (${nextName}) es de 2/4: cuenta "1 - 2" firme sin frenar el pulso.`
+              : next.beats === 3
+              ? `El próximo compás (${nextName}) va en 3/4 (vals). Acentúa el pulso 1 al cambiar.`
+              : `Prepara mentalmente la forma de ${nextName} en el último pulso de ${curName} manteniendo la mano derecha en péndulo.`);
+          text.textContent = tip;
+        }
+      }
+
+      function renderWorkspaceVisibility() {
+        const sec = getSection();
+        const tabWs = document.getElementById('tab-workspace');
+        const chordWs = document.getElementById('chords-workspace');
+
+        if (sec.type === 'tab') {
+          tabWs.classList.remove('hidden');
+          chordWs.classList.add('hidden');
+        } else if (sec.type === 'chords') {
+          tabWs.classList.add('hidden');
+          chordWs.classList.remove('hidden');
+        } else {
+          // hybrid shows BOTH!
+          tabWs.classList.remove('hidden');
+          chordWs.classList.remove('hidden');
+        }
+      }
+
+      function renderMasterBeats() {
+        const list = getActiveMeasures();
+        const m = list[Math.min(state.measureIdx, list.length - 1)] || { beats: 4, num: 1 };
+        document.getElementById('live-measure-badge').textContent = `C.${m.num}`;
+
+        const wrap = document.getElementById('master-beats');
+        wrap.innerHTML = '';
+        const curBeat = Math.floor(state.step16 / 4);
+        for (let b = 0; b < m.beats; b++) {
+          const d = document.createElement('span');
+          const lit = state.isPlaying && (
+            (state.isCountingIn && (m.beats - state.countInRemaining) === b) ||
+            (!state.isCountingIn && curBeat === b)
+          );
+          d.className = `beat-dot ${b === 0 ? 'accent-beat' : ''} ${lit ? 'active' : ''}`;
+          wrap.appendChild(d);
+        }
+      }
+
+      function renderLab() {
+        const song = getSong();
+        const specials = song.specialChords || [];
+        document.getElementById('lab-count-badge').textContent = `${specials.length} acordes especiales`;
+        const grid = document.getElementById('lab-grid');
+        grid.innerHTML = '';
+
+        specials.forEach((item) => {
+          const entry = song.chords[item.key];
+          if (!entry) return;
+          const mode = state.labModes[item.key] || 'orig';
+          const v = getChordVoicing(item.key, mode);
+
+          const card = document.createElement('article');
+          card.className = 'card rounded-2xl p-5 flex flex-col justify-between gap-4';
+          card.innerHTML = `
+            <div class="space-y-3">
+              <div class="flex items-start justify-between gap-2">
+                <div>
+                  <span class="font-mono text-[10px] uppercase tracking-wider text-accent">${item.tag || 'Acorde clave'}</span>
+                  <h3 class="font-serif text-xl font-bold">${entry.display}</h3>
+                  <p class="font-mono text-[11px] text-muted">${v.label} · ${v.formula}</p>
+                </div>
+              </div>
+
+              <!-- Audio buttons: Arpegiado & Rasgueado -->
+              <div class="grid grid-cols-2 gap-2">
+                <button type="button" class="btn-lab-arp px-2.5 py-2 rounded-xl text-xs font-medium surface-elevated hover:border-[var(--accent)] cursor-pointer">
+                  🎵 Escuchar Arpegiado
+                </button>
+                <button type="button" class="btn-lab-strum px-2.5 py-2 rounded-xl text-xs font-medium surface-elevated hover:border-[var(--accent)] cursor-pointer">
+                  🔊 Escuchar Rasgueado
+                </button>
+              </div>
+
+              <!-- Orig vs Beg inline toggle -->
+              <div class="p-1 rounded-lg surface-subtle inline-flex gap-1 w-full">
+                <button type="button" data-m="orig" class="btn-lab-mode flex-1 py-1.5 rounded-md text-[11px] font-semibold cursor-pointer ${mode === 'orig' ? 'bg-accent text-[#141413]' : 'text-muted'}">Original</button>
+                <button type="button" data-m="beg" class="btn-lab-mode flex-1 py-1.5 rounded-md text-[11px] font-semibold cursor-pointer ${mode === 'beg' ? 'bg-accent text-[#141413]' : 'text-muted'}">Principiante</button>
+              </div>
+
+              <div class="flex justify-center py-2 rounded-xl surface-subtle cursor-pointer lab-svg-click" title="Clic para escuchar">
+                ${renderChordSVG(v, 'large')}
+              </div>
+
+              <div class="space-y-1">
+                <h4 class="text-[11px] font-semibold uppercase tracking-wider text-muted">Armado dedo por dedo</h4>
+                <ol class="text-xs text-muted space-y-1 list-decimal pl-4 leading-relaxed">
+                  ${(item.steps || []).map(s => `<li>${s}</li>`).join('')}
+                </ol>
+              </div>
+            </div>
+
+            <div class="p-3 rounded-xl text-xs leading-relaxed border" style="background-color: var(--warning-soft); border-color: color-mix(in srgb, var(--warning) 35%, transparent);">
+              <strong style="color: var(--warning);">⚠ Tip de corrección:</strong>
+              <span>${item.mistake || ''}</span>
+            </div>
+          `;
+
+          card.querySelector('.btn-lab-arp').addEventListener('click', () => audio.strumChordFrets(v.frets, 'arpeggio', 0.16, 1.7));
+          card.querySelector('.btn-lab-strum').addEventListener('click', () => audio.strumChordFrets(v.frets, 'strum', 0.15, 1.5));
+          card.querySelector('.lab-svg-click').addEventListener('click', () => audio.strumChordFrets(v.frets, 'strum', 0.15, 1.5));
+          card.querySelectorAll('.btn-lab-mode').forEach((b) => {
+            b.addEventListener('click', () => {
+              state.labModes[item.key] = b.dataset.m;
+              renderLab();
+            });
+          });
+
+          grid.appendChild(card);
+        });
+      }
+
+      function renderGuide() {
+        const song = getSong();
+        const g = song.guide || DEFAULT_SONG_LIBRARY[0].guide;
+        document.getElementById('guide-title').textContent = g.title || 'Guía de Progreso';
+        document.getElementById('guide-intro').textContent = g.intro || '';
+
+        const stagesWrap = document.getElementById('guide-stages');
+        stagesWrap.innerHTML = (g.stages || []).map((st) => `
+          <div class="card rounded-2xl p-5 space-y-2.5">
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+              <span class="font-mono text-[11px] px-2.5 py-0.5 rounded-full bg-accent-soft text-accent border border-accent">${st.badge}</span>
+              <span class="text-xs text-muted font-mono">${st.scope}</span>
+            </div>
+            <h3 class="font-serif text-lg font-semibold">${st.title}</h3>
+            <p class="text-xs sm:text-sm text-muted leading-relaxed">${st.text}</p>
+          </div>
+        `).join('');
+
+        const techWrap = document.getElementById('guide-techniques');
+        techWrap.innerHTML = (g.techniques || []).map((t) => `
+          <div class="card rounded-2xl p-5 space-y-2.5">
+            <div class="text-xl">${t.icon || '🎸'}</div>
+            <h3 class="font-serif text-base sm:text-lg font-semibold">${t.title}</h3>
+            <ul class="text-xs sm:text-sm text-muted space-y-2 list-disc pl-4 leading-relaxed">
+              ${(t.bullets || []).map(b => `<li>${b}</li>`).join('')}
+            </ul>
+          </div>
+        `).join('');
+      }
+
+      function renderAllPracticeViews() {
+        renderSectionHeaderAndSpeed();
+        renderWorkspaceVisibility();
+        const sec = getSection();
+        if (sec.type === 'tab' || sec.type === 'hybrid') {
+          renderLoopControls();
+          renderTablatureGrid();
+          renderLiveFretboard();
+        }
+        if (sec.type === 'chords' || sec.type === 'hybrid') {
+          renderChordWorkspace();
+        }
+        renderCoach();
+        renderMasterBeats();
+      }
+
+      /* ---------------------------------------------------------------------
+         6. PLAYBACK ENGINE (16TH-NOTE PRECISION, A-B LOOP, AUTO-ACCELERATE)
+         --------------------------------------------------------------------- */
+      let playTimer = null;
+
+      function updatePlayStatusUI() {
+        const icon = document.getElementById('play-icon');
+        const label = document.getElementById('play-label');
+        const badge = document.getElementById('status-badge');
+        const loopBadge = document.getElementById('autospeed-badge');
+
+        if (state.isPlaying) {
+          icon.textContent = '⏸';
+          label.textContent = 'Pausar';
+          const list = getActiveMeasures();
+          const m = list[Math.min(state.measureIdx, list.length - 1)] || { beats: 4 };
+          badge.textContent = state.isCountingIn
+            ? `Cuenta: ${state.countInRemaining}`
+            : `Pulso ${Math.floor(state.step16 / 4) + 1}/${m.beats}`;
+        } else {
+          icon.textContent = '▶';
+          label.textContent = 'Reproducir';
+          badge.textContent = 'Listo';
+        }
+
+        if (state.autoSpeedEnabled) {
+          loopBadge.classList.remove('hidden');
+          loopBadge.textContent = `Vuelta ${(state.loopCount % 2) + 1}/2`;
+        } else {
+          loopBadge.classList.add('hidden');
+        }
+      }
+
+      function stopPlayback(resetToLoopStart = false) {
+        clearTimeout(playTimer);
+        playTimer = null;
+        state.isPlaying = false;
+        state.isCountingIn = false;
+        if (resetToLoopStart) {
+          state.measureIdx = isTabActive() ? state.loopStart : 0;
+          state.step16 = 0;
+          state.loopCount = 0;
+          state.activeEventKey = null;
+        }
+        updatePlayStatusUI();
+        renderAllPracticeViews();
+      }
+
+      function startPlayback() {
+        audio.ensure();
+        const list = getActiveMeasures();
+        if (!list.length) return;
+
+        if (isTabActive() && (state.measureIdx < state.loopStart || state.measureIdx > state.loopEnd)) {
+          state.measureIdx = state.loopStart;
+        }
+        state.isPlaying = true;
+        state.step16 = 0;
+
+        if (state.countInEnabled) {
+          state.isCountingIn = true;
+          state.countInRemaining = list[state.measureIdx].beats || 4;
+        } else {
+          state.isCountingIn = false;
+        }
+
+        updatePlayStatusUI();
+        tickEngine();
+      }
+
+      function tickEngine() {
+        if (!state.isPlaying) return;
+
+        const bpm = getEffectiveBpm();
+        const beatSec = 60 / bpm;
+        const beatMs = beatSec * 1000;
+        const step16Ms = beatMs / 4;
+        const list = getActiveMeasures();
+        const m = list[state.measureIdx] || list[0];
+
+        // Count-in phase (quarter-note ticks)
+        if (state.isCountingIn) {
+          const isAccent = state.countInRemaining === m.beats;
+          if (state.metronomeEnabled) audio.playClick(isAccent, true);
+          updatePlayStatusUI();
+          renderMasterBeats();
+          state.countInRemaining--;
+          if (state.countInRemaining <= 0) {
+            state.isCountingIn = false;
+            state.step16 = 0;
+          }
+          playTimer = setTimeout(tickEngine, beatMs);
+          return;
+        }
+
+        const isQuarterBeat = state.step16 % 4 === 0;
+        const curBeatInt = Math.floor(state.step16 / 4);
+        const curBeatFloat = state.step16 / 4;
+
+        // 1. Metronome click on quarter beats
+        if (isQuarterBeat && state.metronomeEnabled) {
+          audio.playClick(curBeatInt === 0, false);
+        }
+
+        // 2. Audio & Visual Sync
+        if (isTabActive()) {
+          // Find any event matching exact beatFloat
+          const events = m.events || [];
+          let triggeredIdx = -1;
+          events.forEach((ev, idx) => {
+            if (Math.abs(ev.beat - curBeatFloat) < 0.001) {
+              triggeredIdx = idx;
+              if (state.guitarEnabled) {
+                audio.playTabEvent(ev, beatSec, state.voicingMode === 'beg');
+              }
+              if (ev.tech === 'rest') {
+                state.activeFretNotes = [];
+              } else {
+                const isBeg = state.voicingMode === 'beg';
+                state.activeFretNotes = (isBeg && ev.begNotes) ? ev.begNotes : (ev.notes || []);
+              }
+            }
+          });
+          if (triggeredIdx >= 0) {
+            state.activeEventKey = `${state.measureIdx}:${triggeredIdx}`;
+          }
+          renderTablatureGrid();
+          renderLiveFretboard();
+          renderCoach();
+        } else {
+          // Chord mode
+          if (state.guitarEnabled && m.chord) {
+            const v = getChordVoicing(m.chord);
+            const hasX = (m.strum || '').includes('X');
+            if (state.step16 === 0 && v) {
+              audio.strumChordFrets(v.frets, 'strum', 0.14, beatSec * 2.1);
+            } else if (hasX && (state.step16 === 2 || state.step16 === 10)) {
+              audio.playMutedStrum();
+            } else if (m.beats === 4 && state.step16 === 8 && v) {
+              audio.strumChordFrets(v.frets, 'strum', 0.09, beatSec * 1.1);
+            } else if (m.beats === 3 && state.step16 === 6 && v) {
+              audio.strumChordFrets(v.frets, 'up', 0.08, beatSec * 0.9);
+            }
+          }
+          if (isQuarterBeat) {
+            renderChordWorkspace();
+            renderCoach();
+          }
+        }
+
+        if (isQuarterBeat) {
+          updatePlayStatusUI();
+          renderMasterBeats();
+        }
+
+        // 3. Advance 16th-note pointer
+        state.step16++;
+        const totalSteps = (m.beats || 4) * 4;
+        if (state.step16 >= totalSteps) {
+          state.step16 = 0;
+          state.measureIdx++;
+
+          const rangeStart = isTabActive() ? state.loopStart : 0;
+          const rangeEnd = isTabActive() ? state.loopEnd : (list.length - 1);
+
+          if (state.measureIdx > rangeEnd) {
+            state.measureIdx = rangeStart;
+            state.loopCount++;
+            // Auto-Accelerate (+5% every 2 loops up to 100%)
+            if (state.autoSpeedEnabled && state.loopCount % 2 === 0 && state.speedPct < 100) {
+              state.speedPct = Math.min(100, state.speedPct + 5);
+              updateSpeedUI();
+              showToast(`Auto-Acelerar: ${state.speedPct}% (${getEffectiveBpm()} BPM)`);
+            }
+          }
+        }
+
+        playTimer = setTimeout(tickEngine, step16Ms);
+      }
+
+      /* ---------------------------------------------------------------------
+         7. INTERACTIONS (JUMP, AUDITION, LOOP, NAVIGATION)
+         --------------------------------------------------------------------- */
+      function auditionTabEvent(mIdx, evIdx) {
+        const sec = getSection();
+        const m = sec.tabMeasures?.[mIdx];
+        if (!m) return;
+        const ev = m.events?.[evIdx];
+        if (!ev) return;
+
+        if (sec.type === 'hybrid') state.hybridPlayTarget = 'tab';
+        state.measureIdx = mIdx;
+        state.activeEventKey = `${mIdx}:${evIdx}`;
+        const isBeg = state.voicingMode === 'beg';
+        state.activeFretNotes = ev.tech === 'rest' ? [] : ((isBeg && ev.begNotes) ? ev.begNotes : (ev.notes || []));
+
+        audio.playTabEvent(ev, 60 / getEffectiveBpm(), isBeg);
+        renderTablatureGrid();
+        renderLiveFretboard();
+        renderCoach();
+        renderMasterBeats();
+      }
+
+      function jumpToTabMeasure(mIdx) {
+        state.measureIdx = mIdx;
+        state.step16 = 0;
+        if (mIdx < state.loopStart || mIdx > state.loopEnd) {
+          state.loopStart = 0;
+          state.loopEnd = (getSection().tabMeasures?.length || 1) - 1;
+          renderLoopControls();
+        }
+        const m = getSection().tabMeasures?.[mIdx];
+        if (m && m.events?.length && !state.isPlaying) {
+          auditionTabEvent(mIdx, 0);
+        } else {
+          renderAllPracticeViews();
+        }
+      }
+
+      function jumpToChordMeasure(idx) {
+        state.measureIdx = idx;
+        state.step16 = 0;
+        renderAllPracticeViews();
+        if (!state.isPlaying) {
+          const m = getSection().chordMeasures?.[idx];
+          if (m?.chord) {
+            const v = getChordVoicing(m.chord);
+            if (v) audio.strumChordFrets(v.frets, 'strum', 0.15, 1.3);
+          }
+        }
+      }
+
+      function setLoopRange(start, end) {
+        const max = (getSection().tabMeasures?.length || 1) - 1;
+        let s = Math.max(0, Math.min(start, max));
+        let e = Math.max(0, Math.min(end, max));
+        if (s > e) [s, e] = [e, s];
+        state.loopStart = s;
+        state.loopEnd = e;
+        state.loopCount = 0;
+        if (state.measureIdx < s || state.measureIdx > e) {
+          state.measureIdx = s;
+          state.step16 = 0;
+        }
+        renderLoopControls();
+        renderTablatureGrid();
+        renderCoach();
+      }
+
+      function selectSection(idx) {
+        const wasPlaying = state.isPlaying;
+        stopPlayback(false);
+        state.sectionIndex = idx;
+        state.measureIdx = 0;
+        state.step16 = 0;
+        state.loopCount = 0;
+        state.activeEventKey = null;
+        state.activeFretNotes = [];
+        const sec = getSection();
+        state.hybridPlayTarget = sec.type === 'chords' ? 'chords' : 'tab';
+        if (sec.tabMeasures?.length) {
+          state.loopStart = 0;
+          state.loopEnd = sec.tabMeasures.length - 1;
+          // Show first note on fretboard immediately for clarity
+          const firstEv = sec.tabMeasures[0].events?.[0];
+          if (firstEv && firstEv.notes?.length) {
+            state.activeFretNotes = firstEv.notes;
+            state.activeEventKey = '0:0';
+          }
+        }
+        renderSectionList();
+        renderAllPracticeViews();
+        if (wasPlaying) startPlayback();
+      }
+
+      function selectSong(songId) {
+        stopPlayback(true);
+        state.songId = songId;
+        state.sectionIndex = 0;
+        renderSongSelector();
+        updateGlobalProgress();
+        selectSection(0);
+        renderLab();
+        renderGuide();
+        showToast(`Canción cargada: ${getSong().title}`);
+      }
+
+      function setVoicingMode(mode) {
+        state.voicingMode = mode;
+        const bBeg = document.getElementById('btn-mode-beg');
+        const bOrig = document.getElementById('btn-mode-orig');
+        if (mode === 'beg') {
+          bBeg.className = 'flex-1 sm:flex-none px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer bg-accent text-[#141413]';
+          bOrig.className = 'flex-1 sm:flex-none px-3 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer text-muted hover:text-[var(--text-main)]';
+        } else {
+          bOrig.className = 'flex-1 sm:flex-none px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer bg-accent text-[#141413]';
+          bBeg.className = 'flex-1 sm:flex-none px-3 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer text-muted hover:text-[var(--text-main)]';
+        }
+        renderAllPracticeViews();
+      }
+
+      function applyTheme(theme) {
+        state.theme = theme;
+        document.documentElement.setAttribute('data-theme', theme);
+        document.getElementById('theme-icon').textContent = theme === 'dark' ? '☀️' : '🌙';
+        document.getElementById('theme-label').textContent = theme === 'dark' ? 'Claro' : 'Oscuro';
+        saveState();
+      }
+
+      function switchTab(tab) {
+        state.activeTab = tab;
+        if (tab !== 'practice' && state.isPlaying) stopPlayback(false);
+        ['practice', 'lab', 'guide'].forEach((t) => {
+          document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tab);
+        });
+        document.querySelectorAll('.nav-tab').forEach((b) => {
+          const active = b.dataset.tab === tab;
+          b.classList.toggle('border-[var(--accent)]', active);
+          b.classList.toggle('text-[var(--accent)]', active);
+          b.classList.toggle('border-transparent', !active);
+          b.classList.toggle('text-muted', !active);
+        });
+        if (tab === 'lab') renderLab();
+        if (tab === 'guide') renderGuide();
+      }
+
+      /* ---------------------------------------------------------------------
+         8. JSON STUDIO MODAL (IMPORT / EXPORT / VALIDATE / PERSIST)
+         --------------------------------------------------------------------- */
+      function openJsonModal() {
+        const modal = document.getElementById('json-modal');
+        const err = document.getElementById('json-error-box');
+        err.classList.add('hidden');
+        document.getElementById('json-editor').value = JSON.stringify(getSong(), null, 2);
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      }
+
+      function closeJsonModal() {
+        const modal = document.getElementById('json-modal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+
+      function copyToClipboardSafe(text) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        let ok = false;
+        try {
+          ok = document.execCommand('copy');
+        } catch (e) { ok = false; }
+        document.body.removeChild(ta);
+        return ok;
+      }
+
+      function validateSongJson(obj) {
+        if (!obj || typeof obj !== 'object') return 'El JSON debe ser un objeto raíz válido.';
+        if (!obj.id || typeof obj.id !== 'string') return 'Falta la propiedad "id" (texto único).';
+        if (!obj.title || typeof obj.title !== 'string') return 'Falta la propiedad "title" (título de la canción).';
+        if (!Array.isArray(obj.sections) || !obj.sections.length) return 'Debe incluir al menos 1 sección dentro de "sections".';
+        for (let i = 0; i < obj.sections.length; i++) {
+          const s = obj.sections[i];
+          if (!s.name || !s.type) return `La sección #${i + 1} requiere "name" y "type" ("tab", "chords" o "hybrid").`;
+          if (s.type === 'tab' && (!Array.isArray(s.tabMeasures) || !s.tabMeasures.length)) {
+            return `La sección "${s.name}" es tipo "tab" pero no tiene "tabMeasures".`;
+          }
+          if (s.type === 'chords' && (!Array.isArray(s.chordMeasures) || !s.chordMeasures.length)) {
+            return `La sección "${s.name}" es tipo "chords" pero no tiene "chordMeasures".`;
+          }
+        }
+        return null;
+      }
+
+      function applyJsonFromEditor() {
+        const raw = document.getElementById('json-editor').value;
+        const errBox = document.getElementById('json-error-box');
+        let parsed;
+        try {
+          parsed = JSON.parse(raw);
+        } catch (e) {
+          errBox.textContent = `Error de sintaxis JSON: ${e.message}`;
+          errBox.classList.remove('hidden');
+          return;
+        }
+
+        const validationErr = validateSongJson(parsed);
+        if (validationErr) {
+          errBox.textContent = `Error de esquema: ${validationErr}`;
+          errBox.classList.remove('hidden');
+          return;
+        }
+
+        errBox.classList.add('hidden');
+        if (!parsed.chords) parsed.chords = {};
+        if (!parsed.transitions) parsed.transitions = {};
+        if (!parsed.specialChords) parsed.specialChords = [];
+
+        const idx = songLibrary.findIndex(s => s.id === parsed.id);
+        if (idx >= 0) songLibrary[idx] = parsed;
+        else songLibrary.push(parsed);
+
+        if (document.getElementById('chk-json-save-local').checked) {
+          try {
+            const customIds = new Set(DEFAULT_SONG_LIBRARY.map(s => s.id));
+            const toPersist = songLibrary.filter(s => !customIds.has(s.id) || s.id === parsed.id);
+            localStorage.setItem(STORE_CUSTOM_SONGS, JSON.stringify(toPersist));
+          } catch (e) { /* ignore quota */ }
+        }
+
+        closeJsonModal();
+        selectSong(parsed.id);
+        showToast(`¡JSON aplicado en vivo: ${parsed.title}!`);
+      }
+
+      /* ---------------------------------------------------------------------
+         9. EVENT LISTENERS & BOOTSTRAP
+         --------------------------------------------------------------------- */
+      function init() {
+        // Dentro de Guitarra Diaria: usa el tema de la app y oculta el botón propio
+        const temaApp = new URLSearchParams(location.search).get('theme');
+        if (temaApp === 'dark' || temaApp === 'light') {
+          state.theme = temaApp;
+          document.getElementById('btn-theme').style.display = 'none';
+          window.addEventListener('pagehide', () => { if (state.isPlaying) stopPlayback(false); });
+        }
+        applyTheme(state.theme);
+        renderSongSelector();
+        updateGlobalProgress();
+        selectSection(0);
+        renderLab();
+        renderGuide();
+
+        // Song selector
+        document.getElementById('song-selector').addEventListener('change', (e) => {
+          selectSong(e.target.value);
+        });
+
+        // Theme toggle
+        document.getElementById('btn-theme').addEventListener('click', () => {
+          applyTheme(state.theme === 'dark' ? 'light' : 'dark');
+        });
+
+        // Main Tabs
+        document.querySelectorAll('.nav-tab').forEach((b) => {
+          b.addEventListener('click', () => switchTab(b.dataset.tab));
+        });
+
+        // Beginner vs Original
+        document.getElementById('btn-mode-beg').addEventListener('click', () => setVoicingMode('beg'));
+        document.getElementById('btn-mode-orig').addEventListener('click', () => setVoicingMode('orig'));
+
+        // Transport
+        document.getElementById('btn-play').addEventListener('click', () => {
+          if (state.isPlaying) stopPlayback(false);
+          else startPlayback();
+        });
+        document.getElementById('btn-restart').addEventListener('click', () => {
+          const was = state.isPlaying;
+          stopPlayback(true);
+          if (was) startPlayback();
+        });
+        document.getElementById('btn-prev').addEventListener('click', () => {
+          const list = getActiveMeasures();
+          if (!list.length) return;
+          const nextIdx = (state.measureIdx - 1 + list.length) % list.length;
+          if (isTabActive()) jumpToTabMeasure(nextIdx);
+          else jumpToChordMeasure(nextIdx);
+        });
+        document.getElementById('btn-next').addEventListener('click', () => {
+          const list = getActiveMeasures();
+          if (!list.length) return;
+          const nextIdx = (state.measureIdx + 1) % list.length;
+          if (isTabActive()) jumpToTabMeasure(nextIdx);
+          else jumpToChordMeasure(nextIdx);
+        });
+
+        // Speed
+        document.getElementById('speed-slider').addEventListener('input', (e) => {
+          state.speedPct = Number(e.target.value);
+          updateSpeedUI();
+        });
+        document.querySelectorAll('.speed-preset').forEach((b) => {
+          b.addEventListener('click', () => {
+            state.speedPct = Number(b.dataset.speed);
+            updateSpeedUI();
+          });
+        });
+
+        // Practice Checkboxes
+        document.getElementById('chk-countin').addEventListener('change', e => state.countInEnabled = e.target.checked);
+        document.getElementById('chk-metronome').addEventListener('change', e => state.metronomeEnabled = e.target.checked);
+        document.getElementById('chk-guitar').addEventListener('change', e => state.guitarEnabled = e.target.checked);
+        document.getElementById('chk-autospeed').addEventListener('change', (e) => {
+          state.autoSpeedEnabled = e.target.checked;
+          state.loopCount = 0;
+          updatePlayStatusUI();
+          if (e.target.checked) showToast('Auto-Acelerar activado (+5% cada 2 vueltas)');
+        });
+
+        // Loop A-B dropdowns
+        document.getElementById('loop-start-select').addEventListener('change', (e) => {
+          setLoopRange(Number(e.target.value), state.loopEnd);
+        });
+        document.getElementById('loop-end-select').addEventListener('change', (e) => {
+          setLoopRange(state.loopStart, Number(e.target.value));
+        });
+
+        // Audition Current / Next Chords
+        const hearCur = (mode) => {
+          const list = getSection().chordMeasures || [];
+          const m = list[Math.min(state.measureIdx, list.length - 1)];
+          if (m?.chord) {
+            const v = getChordVoicing(m.chord);
+            if (v) audio.strumChordFrets(v.frets, mode, 0.16, 1.5);
+          }
+        };
+        document.getElementById('btn-strum-current').addEventListener('click', () => hearCur('strum'));
+        document.getElementById('btn-arp-current').addEventListener('click', () => hearCur('arpeggio'));
+        document.getElementById('cur-chord-svg').addEventListener('click', () => hearCur('strum'));
+
+        const hearNext = () => {
+          const list = getSection().chordMeasures || [];
+          if (!list.length) return;
+          const m = list[(state.measureIdx + 1) % list.length];
+          if (m?.chord) {
+            const v = getChordVoicing(m.chord);
+            if (v) audio.strumChordFrets(v.frets, 'strum', 0.16, 1.5);
+          }
+        };
+        document.getElementById('btn-strum-next').addEventListener('click', hearNext);
+        document.getElementById('next-chord-svg').addEventListener('click', hearNext);
+
+        // JSON Studio Modal events
+        document.getElementById('btn-open-json').addEventListener('click', openJsonModal);
+        document.getElementById('btn-close-json').addEventListener('click', closeJsonModal);
+        document.getElementById('btn-cancel-json').addEventListener('click', closeJsonModal);
+        document.getElementById('btn-apply-json').addEventListener('click', applyJsonFromEditor);
+
+        document.getElementById('btn-json-current').addEventListener('click', () => {
+          document.getElementById('json-editor').value = JSON.stringify(getSong(), null, 2);
+          document.getElementById('json-error-box').classList.add('hidden');
+        });
+        document.getElementById('btn-json-template').addEventListener('click', () => {
+          const tpl = DEFAULT_SONG_LIBRARY[1];
+          document.getElementById('json-editor').value = JSON.stringify(tpl, null, 2);
+          document.getElementById('json-error-box').classList.add('hidden');
+          showToast('Plantilla base cargada en el editor');
+        });
+        document.getElementById('btn-json-copy').addEventListener('click', () => {
+          const ok = copyToClipboardSafe(document.getElementById('json-editor').value);
+          showToast(ok ? 'JSON copiado al portapapeles' : 'Selecciona y copia el JSON manualmente');
+        });
+        document.getElementById('btn-json-download').addEventListener('click', () => {
+          const blob = new Blob([document.getElementById('json-editor').value], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${getSong().id || 'cancion'}.json`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        });
+        document.getElementById('btn-json-reset-custom').addEventListener('click', () => {
+          try { localStorage.removeItem(STORE_CUSTOM_SONGS); } catch (e) {}
+          songLibrary = [...DEFAULT_SONG_LIBRARY];
+          closeJsonModal();
+          selectSong(songLibrary[0].id);
+          showToast('Biblioteca restaurada a valores de fábrica');
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+          if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+          if (!document.getElementById('json-modal').classList.contains('hidden')) {
+            if (e.key === 'Escape') closeJsonModal();
+            return;
+          }
+          if (state.activeTab !== 'practice') return;
+          if (e.code === 'Space') {
+            e.preventDefault();
+            if (state.isPlaying) stopPlayback(false);
+            else startPlayback();
+          } else if (e.code === 'ArrowRight') {
+            e.preventDefault();
+            document.getElementById('btn-next').click();
+          } else if (e.code === 'ArrowLeft') {
+            e.preventDefault();
+            document.getElementById('btn-prev').click();
+          }
+        });
+      }
+
+      window.addEventListener('DOMContentLoaded', init);
+    })();
+  </script>
+</body>
+</html>
