@@ -262,7 +262,8 @@ svg.pat-svg{width:100%;max-width:340px;display:block;margin:4px auto;color:var(-
 h1,h2,h3,.h{font-family:var(--serif);letter-spacing:0}
 /* ---------- canciones y afinador ---------- */
 .studio{display:block;width:100%;height:calc(100dvh - 150px);min-height:460px;border:1px solid var(--line);border-radius:16px;background:var(--bg)}
-@media (max-width:860px){.studio{height:calc(100dvh - 190px - env(safe-area-inset-bottom))}.tabs button{min-width:0;font-size:9px;letter-spacing:-.03em;overflow:hidden;padding-left:0;padding-right:0}}
+.studio.full{position:fixed;inset:0;z-index:300;width:100%;height:100dvh;min-height:0;border:0;border-radius:0}
+@media (max-width:860px){.studio:not(.full){height:calc(100dvh - 190px - env(safe-area-inset-bottom))}.tabs button{min-width:0;font-size:9px;letter-spacing:-.03em;overflow:hidden;padding-left:0;padding-right:0}}
 .tuner{max-width:560px;margin:0 auto;text-align:center}
 .tuner svg{display:block;width:100%;height:auto}
 .tuner .needle-g{transition:transform .14s ease-out}
@@ -1074,8 +1075,11 @@ function repertorioHTML(){
 function cancionesHTML(){
   if(cTab==='rep')return repertorioHTML();
   const th=esOscuro()?'dark':'light';
-  $('#app').innerHTML=`<iframe class="studio" src="studio.html?theme=${th}" title="Estudio de canciones"></iframe>`;
+  $('#app').innerHTML=`<iframe class="studio full" src="studio.html?theme=${th}&full=1" title="Estudio de canciones" allow="fullscreen; autoplay"></iframe>`;
 }
+// El estudio ocupa toda la pantalla; si el navegador lo permite, también esconde sus barras
+function pantallaCompleta(si){try{const d=document;if(si&&!d.fullscreenElement){const p=d.documentElement.requestFullscreen&&d.documentElement.requestFullscreen({navigationUI:'hide'});if(p)p.catch(()=>{})}else if(!si&&d.fullscreenElement)d.exitFullscreen().catch(()=>{})}catch(e){}}
+addEventListener('message',e=>{const f=document.querySelector('iframe.studio');if(e.data!=='gd-salir'||!f||e.source!==f.contentWindow)return;pantallaCompleta(false);cTab='rep';render();window.scrollTo(0,0)});
 function refTone(f){
   Met.ensure();const o=Met.ctx.createOscillator(),g=Met.ctx.createGain(),t=Met.ctx.currentTime;o.type='triangle';o.frequency.value=f;
   g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.45,t+.03);g.gain.exponentialRampToValueAtTime(.001,t+3);o.connect(g);g.connect(Met.ctx.destination);o.start(t);o.stop(t+3.1);
@@ -1949,8 +1953,8 @@ document.addEventListener('click',e=>{
   if(['nbt','pdone','pdel','padd','iedit','icancel','idel','iplay','iprev','isave','sedit','scancel','sdel','sst','ssave','gplay','grnd','gsave'].includes(k))return nbAct(k,x,y);
   if(k==='exp')return exportData();
   if(k==='imp'){const i=$('#impf');i.value='';i.click();return}
-  if(k==='tab'){stopSounds();recStop();if(inKit())Met.stop();if(x!=='afin'&&Tn.on)tunerStop();if(x==='canciones'||x==='afin'){Met.stop();if(P)P.running=false}view=x;render();window.scrollTo(0,0)}
-  else if(k==='ct'){stopSounds();cTab=x;render();window.scrollTo(0,0)}
+  if(k==='tab'){stopSounds();recStop();if(inKit())Met.stop();if(x!=='afin'&&Tn.on)tunerStop();if(x==='canciones'||x==='afin'){Met.stop();if(P)P.running=false}if(x==='canciones'&&cTab==='est')pantallaCompleta(true);view=x;render();window.scrollTo(0,0)}
+  else if(k==='ct'){stopSounds();cTab=x;if(x==='est')pantallaCompleta(true);render();window.scrollTo(0,0)}
   else if(k==='ir'){stopSounds();recStop();if(Met.on)Met.stop();if(Tn.on)tunerStop();pTab=x;view='practica';render();window.scrollTo(0,0)}
   else if(k==='ptab'){stopSounds();if(inKit()&&x!=='tools'){Met.stop();if(Tn.on)tunerStop()}pTab=x;render()}
   else if(k==='setup'){const pst=PRESETS[x];Object.keys(SK).forEach(s=>{const p=pr(s);p.lvl=pst.lv[s]||0;const L=LV[s][p.lvl];p.bpm=L.b?L.b[0]:60});st.setup=true;save();render()}

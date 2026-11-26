@@ -157,11 +157,35 @@ function cargar(src){return new Promise(r=>{$app.onload=()=>{const w=$app.conten
   const malasAc=Object.keys(notas).filter(k=>['orig','beg'].some(v=>sat.chords[k][v].frets.some((f,i)=>f>=0&&!notas[k].includes((abiertas[i]+f)%12))));
   ok('Los diagramas de Saturno tienen las notas de cada acorde',!malasAc.length,malasAc.join());
   d.getElementById('btn-play').click();await espera(6000);ok('Saturno se reproduce sin errores',!falloSonido,falloSonido);d.getElementById('btn-play').click();
-  const moj=L.find(s=>s.id==='muchacha-ojos-de-papel'),notasM={G:[7,11,2],'D/F#':[2,6,9],Em:[4,7,11],'Am7 (G)':[9,0,4,7],D:[2,6,9],'Em/G':[4,7,11],Emmaj7:[4,7,11,3],Em7:[4,7,11,2],'A7/C#':[9,1,4,7],C:[0,4,7],'C/B':[0,4,7,11],Am7:[9,0,4,7],Bb:[10,2,5]};
+  const moj=L.find(s=>s.id==='muchacha-ojos-de-papel'),notasM={G:[7,11,2],'D/F#':[2,6,9],Em:[4,7,11],'Am7 (G)':[9,0,4,7],D:[2,6,9],'Em/G':[4,7,11],Emmaj7:[4,7,11,3],Em7:[4,7,11,2],'Em/D':[2,4,7,11],'Em7/B':[4,7,11,2],'C#dim':[1,4,7],C:[0,4,7],'C/G':[0,4,7],Am7:[9,0,4,7],Bb:[10,2,5],Bbsus4:[10,3,5]};
   const malasM=Object.keys(notasM).filter(k=>moj.chords[k].orig.frets.some((f,i)=>f>=0&&!notasM[k].includes((abiertas[i]+f)%12)));
+  const por=id=>{const x={};moj.m.forEach(y=>x[y.num]=(x[y.num]||0)+y.beats);return x};
+  ok('Muchacha: cada compás de las partes A y B suma 2 tiempos',Object.entries(por()).filter(([k])=>k>5&&k<=36).every(([,v])=>v===2));
   ok('Los diagramas de Muchacha tienen las notas de cada acorde',!malasM.length,malasM.join());
   sel.value='muchacha-ojos-de-papel';sel.dispatchEvent(new w.Event('change'));await espera(300);d.getElementById('btn-play').click();await espera(6000);
   ok('Muchacha (introducción en tablatura) se reproduce sin errores',!falloSonido,falloSonido);d.getElementById('btn-play').click();
+
+  // ---------- Cantata según el libro ----------
+  w=await cargar('studio.html?t=9');
+  { const d=w.document,sel=d.getElementById('song-selector');sel.value='cantata-puentes-amarillos';sel.dispatchEvent(new w.Event('change'));await espera(300);
+    d.getElementById('btn-open-json').click();await espera(200);const c=JSON.parse(d.getElementById('json-editor').value);
+    const cm=c.sections.flatMap(x=>x.chordMeasures||[]);
+    ok('Cantata: cada compás cita un acorde existente',cm.every(m=>c.chords[m.chord]),cm.filter(m=>!c.chords[m.chord]).map(m=>m.chord).join());
+    const suma={};cm.forEach(m=>suma[m.num]=(suma[m.num]||0)+m.beats);
+    ok('Cantata: las medidas del libro suman bien',suma[21]===2&&suma[22]===5&&suma[40]===5&&suma[55]===6&&suma[77]===6&&suma[87]===3&&suma[96]===6,JSON.stringify(suma));
+    const intro=c.sections[0].tabMeasures;
+    ok('Cantata: la introducción tiene anacrusa y 15 compases completos',intro.length===16&&intro.every(m=>m.events.every(e=>e.beat>=0&&e.beat<4&&Number.isInteger(e.beat*4))));
+    const base={6:4,5:9,4:2,3:7,2:11,1:4},pc=m=>m.events.flatMap(e=>e.notes.map(n=>(base[n.s]+n.f)%12)).join();
+    ok('Cantata: el compás 2 responde Do# – Fa# – Do#',pc(intro[2])==='6,1,6,1',pc(intro[2]));
+    ok('Cantata: la introducción cierra en Do# mayor',[...new Set(pc(intro[15]).split(',').map(Number))].sort((a,b)=>a-b).join()==='1,5,8',pc(intro[15]));
+  }
+
+  // ---------- pantalla completa ----------
+  w=await cargar('index.html?t=8');w.eval("st.setup=true;view='canciones';cTab='est';render()");await espera(1500);
+  const marco=w.document.querySelector('iframe.studio'),rm=marco.getBoundingClientRect();
+  ok('El estudio detallado ocupa toda la pantalla',rm.top===0&&rm.left===0&&Math.abs(rm.width-w.innerWidth)<2&&Math.abs(rm.height-w.innerHeight)<2,JSON.stringify(rm));
+  marco.contentDocument.getElementById('btn-salir').click();await espera(500);
+  ok('El botón Salir vuelve al repertorio',!w.document.querySelector('iframe.studio')&&w.eval('cTab')==='rep');
 
   // ---------- instalación ----------
   const sw=await (await fetch('sw.js',{cache:'no-store'})).text(),man=await (await fetch('manifest.webmanifest',{cache:'no-store'})).json();
