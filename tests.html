@@ -148,6 +148,21 @@ function cargar(src){return new Promise(r=>{$app.onload=()=>{const w=$app.conten
   ['btn-strum-current','btn-arp-current','btn-strum-next','btn-play'].forEach(i=>d.getElementById(i)?.click());await espera(1500);d.getElementById('btn-play')?.click();
   ok('Canciones: rasgueo, arpegio y reproducción suenan sin errores',!falloSonido&&!!w.Guitarra,falloSonido);
 
+  const sel=d.getElementById('song-selector');sel.value='saturno-pablo-alboran';sel.dispatchEvent(new w.Event('change'));await espera(300);
+  ok('Saturno aparece y se abre',sel.value==='saturno-pablo-alboran'&&d.body.innerText.includes('Estrofa'));
+  const L=[...sel.options].map(o=>o.value).map(id=>{sel.value=id;sel.dispatchEvent(new w.Event('change'));d.getElementById('btn-open-json').click();const s=JSON.parse(d.getElementById('json-editor').value);return{id:s.id,chords:s.chords,m:s.sections.flatMap(x=>x.chordMeasures||[])}});
+  d.querySelectorAll('[id*=json-modal],[id*=modal-json]').forEach(e=>e.classList.add('hidden'));sel.value='saturno-pablo-alboran';sel.dispatchEvent(new w.Event('change'));
+  ok('Cada compás cita un acorde existente y su rasgueo calza',L.every(s=>s.m.every(m=>s.chords[m.chord]&&(m.beats*4)%m.strum.trim().split(/\s+/).length===0)),JSON.stringify(L.flatMap(s=>s.m.filter(m=>!s.chords[m.chord]||(m.beats*4)%m.strum.trim().split(/\s+/).length))));
+  const notas={G:[7,11,2],Em7:[4,7,11,2],D7sus2:[2,4,9,0],C:[0,4,7],'D alto':[2,6],D:[2,6,9],Cadd9:[0,4,7,2],'D/F#':[2,6,9],'D#dim':[3,6,9,0],Em:[4,7,11],B7:[11,3,6,9],Am:[9,0,4]},abiertas=[4,9,2,7,11,4],sat=L.find(s=>s.id==='saturno-pablo-alboran');
+  const malasAc=Object.keys(notas).filter(k=>['orig','beg'].some(v=>sat.chords[k][v].frets.some((f,i)=>f>=0&&!notas[k].includes((abiertas[i]+f)%12))));
+  ok('Los diagramas de Saturno tienen las notas de cada acorde',!malasAc.length,malasAc.join());
+  d.getElementById('btn-play').click();await espera(6000);ok('Saturno se reproduce sin errores',!falloSonido,falloSonido);d.getElementById('btn-play').click();
+  const moj=L.find(s=>s.id==='muchacha-ojos-de-papel'),notasM={G:[7,11,2],'D/F#':[2,6,9],Em:[4,7,11],'Am7 (G)':[9,0,4,7],D:[2,6,9],'Em/G':[4,7,11],Emmaj7:[4,7,11,3],Em7:[4,7,11,2],'A7/C#':[9,1,4,7],C:[0,4,7],'C/B':[0,4,7,11],Am7:[9,0,4,7],Bb:[10,2,5]};
+  const malasM=Object.keys(notasM).filter(k=>moj.chords[k].orig.frets.some((f,i)=>f>=0&&!notasM[k].includes((abiertas[i]+f)%12)));
+  ok('Los diagramas de Muchacha tienen las notas de cada acorde',!malasM.length,malasM.join());
+  sel.value='muchacha-ojos-de-papel';sel.dispatchEvent(new w.Event('change'));await espera(300);d.getElementById('btn-play').click();await espera(6000);
+  ok('Muchacha (introducción en tablatura) se reproduce sin errores',!falloSonido,falloSonido);d.getElementById('btn-play').click();
+
   // ---------- instalación ----------
   const sw=await (await fetch('sw.js',{cache:'no-store'})).text(),man=await (await fetch('manifest.webmanifest',{cache:'no-store'})).json();
   const archivos=[...sw.match(/FILES = \[([^\]]*)\]/)[1].matchAll(/'([^']+)'/g)].map(m=>m[1]);
