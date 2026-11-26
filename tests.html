@@ -32,7 +32,7 @@ function cargar(src){return new Promise(r=>{$app.onload=()=>{const w=$app.conten
   ok('La app abre sin errores',!!E('typeof render==="function"'));
 
   // ---------- datos ----------
-  ok('119 lecciones, ids únicos',E('LES.length===119&&new Set(LES.map(l=>l.id)).size===119'),E('LES.length'));
+  ok('124 lecciones, ids únicos',E('LES.length===124&&new Set(LES.map(l=>l.id)).size===124'),E('LES.length'));
   ok('Todos los acordes tienen 6 cuerdas',E('Object.values(CH).every(c=>c.f.length===6)'));
   ok('Todos los acordes citados existen',E('[...LES,...Object.values(LV).flat()].every(l=>(l.cue||[]).every(c=>CH[c]))'));
   const claves=E('Object.keys(DRILL).filter(k=>!(LBY[k]||k.startsWith("ev:")||Object.values(LV).flat().some(l=>l.n===k)))');
@@ -178,6 +178,50 @@ function cargar(src){return new Promise(r=>{$app.onload=()=>{const w=$app.conten
     const base={6:4,5:9,4:2,3:7,2:11,1:4},pc=m=>m.events.flatMap(e=>e.notes.map(n=>(base[n.s]+n.f)%12)).join();
     ok('Cantata: el compás 2 responde Do# – Fa# – Do#',pc(intro[2])==='6,1,6,1',pc(intro[2]));
     ok('Cantata: la introducción cierra en Do# mayor',[...new Set(pc(intro[15]).split(',').map(Number))].sort((a,b)=>a-b).join()==='1,5,8',pc(intro[15]));
+  }
+
+  // ---------- canción completa y partes juntas ----------
+  w=await cargar('studio.html?t=10');
+  { const d=w.document,sel=d.getElementById('song-selector'),info=d.getElementById('cola-info');
+    const elegir=async id=>{sel.value=id;sel.dispatchEvent(new w.Event('change'));await espera(300)};
+    const json=async()=>{d.getElementById('btn-open-json').click();await espera(150);const c=JSON.parse(d.getElementById('json-editor').value);d.getElementById('btn-close-json').click();return c};
+    let mal=[];
+    for(const id of ['saturno-pablo-alboran','muchacha-ojos-de-papel','cantata-puentes-amarillos']){await elegir(id);const c=await json(),ids=c.sections.map(x=>x.id),usa=(c.form||[]).map(f=>Array.isArray(f)?f[0]:f);
+      if(usa.some(x=>!ids.includes(x))||ids.some(x=>!usa.includes(x)))mal.push(id)}
+    ok('Cada canción completa usa todas sus partes',!mal.length,mal.join());
+    await elegir('saturno-pablo-alboran');
+    const mas=i=>d.querySelectorAll('#section-list .sec-mas')[i].click();
+    mas(1);await espera(200);
+    ok('Al sumar una parte se juntan las dos en orden',!info.classList.contains('hidden')&&info.querySelectorAll('.paso').length===2,info.textContent);
+    mas(2);await espera(200);ok('Se puede sumar una tercera',info.querySelectorAll('.paso').length===3);
+    mas(2);mas(1);await espera(200);ok('Al quitarlas vuelve a una sola',info.classList.contains('hidden'));
+    mas(1);await espera(150);d.getElementById('chk-countin').click();const rap=d.querySelector('[data-speed="100"]');rap.click();
+    info.querySelectorAll('.paso')[0].click();for(let k=0;k<9;k++)d.getElementById('btn-next').click();await espera(150);
+    d.getElementById('btn-play').click();await espera(3500);
+    ok('Al terminar una parte sigue la otra',info.querySelector('.actual')===info.querySelectorAll('.paso')[1],info.querySelector('.actual')&&info.querySelector('.actual').textContent);
+    d.getElementById('btn-play').click();
+    d.getElementById('btn-completa').click();await espera(300);
+    ok('Canción completa de Saturno sigue después del coro',info.querySelectorAll('.paso').length===11,info.textContent);
+    await elegir('cantata-puentes-amarillos');d.getElementById('btn-completa').click();await espera(300);
+    const pasos=info.querySelectorAll('.paso');let fallos=0;for(let k=0;k<pasos.length;k++){info.querySelectorAll('.paso')[k].click();await espera(30);if(!info.querySelector('.actual'))fallos++}
+    ok('La Cantata completa recorre todas sus partes',pasos.length>=14&&!fallos,pasos.length+' pasos');
+    d.querySelectorAll('#section-list > div')[0].querySelector('span').click();await espera(100);
+  }
+
+  // ---------- práctica recomendada ----------
+  { const d=w.document,sel=d.getElementById('song-selector'),botones=()=>[...d.querySelectorAll('#sec-practica button')].map(b=>b.dataset.les);
+    sel.value='cantata-puentes-amarillos';sel.dispatchEvent(new w.Event('change'));await espera(300);
+    ok('La intro de la Cantata recomienda ejercicios de cruce',botones().join()==='md8,md12,md11',botones().join());
+    const sin=[];for(const id of [...sel.options].map(o=>o.value)){sel.value=id;sel.dispatchEvent(new w.Event('change'));const n=d.querySelectorAll('#section-list > div').length;for(let i=0;i<n;i++){d.querySelectorAll('#section-list > div')[i].querySelector('span').click();if(!botones().length)sin.push(id+': '+d.getElementById('sec-title').textContent)}}
+    ok('Las partes de las canciones traen práctica recomendada',!sin.length,sin.join(' | '));
+  }
+  { const v=await cargar('studio.html?t=11'),nombres=v.eval('JSON.stringify(PRACTICAS)');w=await cargar('index.html?t=12');
+    const mal=Object.entries(JSON.parse(nombres)).filter(([id,n])=>w.eval(`LBY['${id}']&&LBY['${id}'].n`)!==n).map(x=>x[0]);
+    ok('Cada práctica recomendada es una lección que existe',!mal.length,mal.join());
+    w.eval("st.setup=true;view='canciones';cTab='est';render()");await espera(1500);
+    const m=w.document.querySelector('iframe.studio').contentDocument,s=m.getElementById('song-selector');s.value='cantata-puentes-amarillos';s.dispatchEvent(new (m.defaultView.Event)('change'));await espera(300);
+    m.querySelector('#sec-practica button').click();await espera(500);
+    ok('Tocar una recomendación abre la lección',!w.document.querySelector('#player').hidden&&w.eval('P&&P.L.id')==='md8',w.eval('P&&P.L.id'));w.eval('closePlayer(true)');
   }
 
   // ---------- pantalla completa ----------
