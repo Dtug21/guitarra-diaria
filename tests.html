@@ -312,11 +312,44 @@ function cargar(src){return new Promise(r=>{$app.onload=()=>{const w=$app.conten
       t('zoom-mas').click();t('zoom-mas').click();t('zoom-mas').click();await espera(200);
       ok(nom+'acercar agranda y no se sale de la pantalla',t('zoom-valor').textContent==='130%'&&ancho()>normal*1.15&&sale(),[normal,ancho()].map(Math.round).join());
       for(let i=0;i<9;i++)t('zoom-menos').click();await espera(200);
-      ok(nom+'alejar achica y tiene tope',t('zoom-valor').textContent==='60%'&&ancho()<normal*.8&&t('zoom-menos').disabled&&sale(),[normal,ancho()].map(Math.round).join());
+      ok(nom+'alejar achica y tiene tope',t('zoom-valor').textContent==='50%'&&ancho()<normal*.7&&t('zoom-menos').disabled&&sale(),[normal,ancho()].map(Math.round).join());
       w=await cargar('studio.html?full=1&zoom2='+an);d=w.document;
-      ok(nom+'se recuerda',d.getElementById('zoom-valor').textContent==='60%');
+      ok(nom+'se recuerda',d.getElementById('zoom-valor').textContent==='50%');
       d.getElementById('zoom-valor').click();
       ok(nom+'el número vuelve a 100%',d.getElementById('zoom-valor').textContent==='100%');
+    }
+    for(const [k,v] of [['guitarlab_zoom',zAntes],['guitarlab_vista',vAntes]])v===null?localStorage.removeItem(k):localStorage.setItem(k,v);
+    [$app.style.width,$app.style.height]=antes; }
+
+  // ---------- todas las partes a la vista y la actual al centro ----------
+  { const antes=[$app.style.width,$app.style.height],zAntes=localStorage.getItem('guitarlab_zoom'),vAntes=localStorage.getItem('guitarlab_vista');localStorage.removeItem('guitarlab_vista');localStorage.removeItem('guitarlab_zoom');
+    for(const [an,al] of [[1480,924],[924,1480]]){ $app.style.width=an+'px';$app.style.height=al+'px';localStorage.removeItem('guitarlab_zoom');
+      w=await cargar('studio.html?full=1&partes='+an);const d=w.document,t=id=>d.getElementById(id),nom='Partes '+an+'×'+al+': ';
+      const sel=t('song-selector');sel.value='barro-tal-vez';sel.dispatchEvent(new w.Event('change'));await espera(400);
+      const caja=()=>d.querySelector('#tab-workspace>:nth-child(3)'),bloques=()=>[...d.querySelectorAll('.bloque-tab')];
+      const anchoCompas=()=>d.querySelector('.tab-measure-box').getBoundingClientRect().width,cab=()=>d.querySelector('#header-song-title').getBoundingClientRect().height;
+      const c0=anchoCompas(),h0=cab();for(let i=0;i<3;i++)t('zoom-menos').click();await espera(300);
+      ok(nom+'alejar achica la tablatura y también la barra de arriba',anchoCompas()<c0*.92&&cab()<h0*.8,[c0,anchoCompas(),h0,cab()].map(Math.round).join());
+      t('zoom-valor').click();await espera(200);
+      t('btn-completa').click();await espera(500);
+      const total=bloques().length;
+      ok(nom+'la tablatura muestra todas las partes juntas, con nombre',total>=5&&bloques().every(b=>b.querySelector('.titulo-bloque')),total);
+      const lejos=d.querySelectorAll('.tab-measure-box')[8];t('btn-next').click();await espera(200);
+      ok(nom+'al avanzar no se redibuja toda la canción',d.querySelectorAll('.tab-measure-box')[8]===lejos);
+      const pasos=[...d.querySelectorAll('#cola-info .paso')],tabs=bloques().map(b=>Number(b.dataset.k));
+      const ultimo=tabs[tabs.length-2];[...d.querySelectorAll('#cola-info .paso')].find(p=>Number(p.dataset.k)===ultimo).click();await espera(500);
+      const visible=()=>{const b=d.querySelector('.bloque-tab.actual .active-measure').getBoundingClientRect(),c=caja().getBoundingClientRect();return b.top<c.bottom-20&&b.bottom>c.top+20};
+      ok(nom+'al pasar de parte, la nueva queda a la vista',Number(d.querySelector('.bloque-tab.actual').dataset.k)===ultimo&&visible()&&t('tab-workspace').scrollTop+caja().scrollTop>100,[ultimo,caja().scrollTop,t('tab-workspace').scrollTop].join());
+      caja().dispatchEvent(new w.Event('wheel',{bubbles:true}));caja().scrollTop=0;t('tab-workspace').scrollTop=0;t('btn-next').click();await espera(300);
+      ok(nom+'si subes a revisar, la pantalla no te mueve',caja().scrollTop===0&&t('tab-workspace').scrollTop===0&&!t('btn-volver').hidden);
+      t('btn-volver').click();await espera(900);
+      ok(nom+'«Volver a la parte actual» la centra otra vez',visible()&&t('btn-volver').hidden,[visible(),t('btn-volver').hidden,caja().scrollTop,t('tab-workspace').scrollTop].join());
+      { const v=id=>!!t(id).getClientRects().length,enTab=v('tab-workspace')&&!v('chords-workspace')&&caja().getBoundingClientRect().height>300,altoTab=Math.round(caja().getBoundingClientRect().height);
+        const acordes=[...d.querySelectorAll('#cola-info .paso')].find(p=>!tabs.includes(Number(p.dataset.k)));acordes.click();await espera(300);
+        ok(nom+'se ve en grande lo que suena: tablatura o acordes',enTab&&v('chords-workspace')&&!v('tab-workspace'),[enTab,altoTab,v('chords-workspace'),v('tab-workspace')].join()); }
+      { sel.value='barro-tal-vez';sel.dispatchEvent(new w.Event('change'));await espera(300);t('btn-completa').click();await espera(300);const b=t('btn-play').getBoundingClientRect(),m=d.querySelector('.mandos').getBoundingClientRect();ok(nom+'«Reproducir» queda siempre a la vista',b.top>=m.top&&b.bottom<=m.bottom+1&&b.bottom<=al,[b.top,b.bottom,m.top,m.bottom].map(Math.round).join()); }
+      sel.value='saturno-pablo-alboran';sel.dispatchEvent(new w.Event('change'));await espera(300);t('btn-completa').click();await espera(300);
+      ok(nom+'con acordes también se ven todas las partes',d.querySelectorAll('#chord-timeline .titulo-bloque').length===d.querySelectorAll('#cola-info .paso').length);
     }
     for(const [k,v] of [['guitarlab_zoom',zAntes],['guitarlab_vista',vAntes]])v===null?localStorage.removeItem(k):localStorage.setItem(k,v);
     [$app.style.width,$app.style.height]=antes; }

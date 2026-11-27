@@ -378,7 +378,7 @@ html.full #btn-salir{display:inline-flex}
 @media (min-width:700px){
  html.full.sin-bloques #btn-partes{display:inline-block}
  html.full.sin-bloques #btn-partes[aria-expanded="true"]{background:var(--accent);border-color:var(--accent);color:#141413}
- html.full.sin-bloques.ver-partes .zona>aside.card{display:flex!important;flex-direction:column;gap:8px;position:fixed;z-index:55;left:10px;top:var(--panel-arriba,60px);bottom:10px;width:min(380px,92vw);overflow:auto;padding:12px;box-shadow:0 12px 30px rgba(0,0,0,.45);border:1px solid var(--accent)}
+ html.full.sin-bloques.ver-partes .zona>aside.card{display:flex!important;flex-direction:column;gap:8px;position:fixed;z-index:55;left:10px;top:calc(var(--panel-arriba,60px) / var(--zoom,1));bottom:10px;width:min(380px,92vw);overflow:auto;padding:12px;box-shadow:0 12px 30px rgba(0,0,0,.45);border:1px solid var(--accent)}
  html.full.sin-bloques.ver-partes .zona>aside>*{flex:none;margin:0}
  html.full.sin-bloques.ver-partes .zona>aside>:first-child{display:flex}
  html.full.sin-bloques.ver-partes .zona>aside #section-list{display:block;overflow:visible;max-height:none}
@@ -386,11 +386,48 @@ html.full #btn-salir{display:inline-flex}
 }
 /* Zoom: acerca o aleja la zona de estudio; la barra de arriba no cambia */
 @media (min-width:700px){
- html.full body>main{zoom:var(--zoom,1)}
+ html.full body>header,html.full body>main{zoom:var(--zoom,1)}
+ html.full #zoom{zoom:calc(1 / var(--zoom,1))}
  html.full #zoom{display:inline-flex;align-items:center;border:1px solid var(--border-strong);border-radius:12px;overflow:hidden}
  #zoom button{padding:7px 12px;font-size:15px;font-weight:700;cursor:pointer;color:inherit}
  #zoom #zoom-valor{font-size:11px;min-width:52px;padding-left:4px;padding-right:4px;font-variant-numeric:tabular-nums}
  #zoom button:disabled{opacity:.35;cursor:default}
+}
+/* Tablatura de varias partes: cada una con su nombre; al alejar caben más compases por fila */
+.bloque-tab{grid-column:1/-1;display:grid;grid-template-columns:inherit;gap:inherit;align-content:start}
+.bloque-tab>.titulo-bloque{grid-column:1/-1;padding:2px 0}
+.bloque-tab.actual>.titulo-bloque::after{content:' · sonando ahora';font-weight:400;opacity:.75}
+#btn-volver{position:fixed;z-index:50;left:50%;bottom:14px;transform:translateX(-50%);padding:12px 18px;border-radius:999px;border:0;background:var(--accent);color:#141413;font-weight:700;font-size:14px;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+#btn-volver[hidden]{display:none}
+@media (min-width:700px){
+ html.full #tab-measures-grid{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+}
+@media (min-width:700px){
+ html.full .derecha.dos.solo-activa.ver-tab>#chords-workspace,html.full .derecha.dos.solo-activa:not(.ver-tab)>#tab-workspace{display:none!important}
+ html.full .derecha.dos.solo-activa>#tab-workspace,html.full .derecha.dos.solo-activa>#chords-workspace{flex:1 1 0;min-height:0}
+ html.full .derecha.solo-activa #fretboard-svg-wrap svg{max-height:21vh}
+ html.full .derecha.solo-activa>#tab-workspace>:nth-child(3)>:first-child{display:none}
+ html.full .derecha.dos.solo-activa>#chords-workspace>:last-child>div{flex-direction:column}
+ html.full .derecha.dos.solo-activa #cur-chord-svg svg{height:min(28vh,270px)}
+ html.full .derecha.dos.solo-activa #next-chord-svg svg{height:min(19vh,180px)}
+}
+@media (min-width:700px) and (orientation:portrait){
+ html.full:not(.sin-linea) .derecha.dos.solo-activa #cur-chord-svg svg{height:min(15vh,230px)}
+ html.full:not(.sin-linea) .derecha.dos.solo-activa #next-chord-svg svg{height:min(10vh,150px)}
+}
+@media (min-width:1000px) and (orientation:landscape){
+ html.full .derecha.dos.solo-activa>#tab-workspace,html.full .derecha.dos.solo-activa>#chords-workspace{grid-row:1/3}
+}
+@media (min-width:700px) and (orientation:portrait){
+ /* En vertical, la tablatura manda: los controles se desplazan dentro de su caja y el mástil es más bajo */
+ html.full .derecha.solo-activa>.mandos{max-height:calc(23vh / var(--zoom,1));overflow:auto}
+ html.full .derecha.solo-activa #fretboard-svg-wrap svg{max-height:13vh}
+}
+@media (min-width:700px){
+ /* Con varias partes, reproducir y velocidad quedan primero; la explicación va debajo */
+ html.full .derecha.solo-activa>.mandos{display:flex;flex-direction:column}
+ html.full .derecha.solo-activa>.mandos>*{flex:none;margin:0}
+ html.full .derecha.solo-activa>.mandos>:last-child{order:-1;border-top:0;padding-top:0}
 }
 /* Letra: se abre solo cuando se pide; la escribe o pega la persona y queda en este aparato */
 :root{--letra-ancho:min(320px,28vw);--letra-alto:34vh}
@@ -511,6 +548,7 @@ html.con-letra.con-letra #fretboard-svg-wrap svg{min-width:0!important;width:100
     </div>
   </header>
   <div id="panel-secciones" hidden></div>
+  <button id="btn-volver" type="button" hidden>◎ Volver a la parte actual</button>
 
   <!-- ============================================================
        MAIN WORKSPACE
@@ -2035,18 +2073,124 @@ html.con-letra.con-letra #fretboard-svg-wrap svg{min-width:0!important;width:100
       }
 
       // 4C. Interactive Multi-Measure SVG Tablature (All 15 measures visible!)
+      // Todas las partes que se están practicando, una debajo de otra
+      function bloquesDeTab() {
+        const juntas = state.cola.map((x, k) => ({ ...x, k, actual: k === state.colaPos })).filter(x => x.tab);
+        if (juntas.length && state.cola.length > 1) return juntas;
+        const n = (getSection().tabMeasures || []).length;
+        return [{ i: state.sectionIndex, a: 0, b: n - 1, k: -1, actual: true }];
+      }
+
       function renderTablatureGrid() {
-        const sec = getSection();
-        const measures = sec.tabMeasures || [];
+        const song = getSong();
         const grid = document.getElementById('tab-measures-grid');
-        grid.innerHTML = '';
+        const bloques = bloquesDeTab();
+        const clave = [song.id, state.voicingMode, ...bloques.map(b => b.i + ':' + b.k)].join('|');
+        if (grid.dataset.clave !== clave) { grid.innerHTML = ''; grid.dataset.clave = clave; }
+        let bloqueActual = null, compasActual = null;
 
-        const isBeg = state.voicingMode === 'beg';
-        const stringLabels = ['e', 'B', 'G', 'D', 'A', 'E'];
+        bloques.forEach((bloque, n) => {
+          const sec = song.sections[bloque.i];
+          let caja = grid.children[n];
+          if (!caja) {
+            caja = document.createElement('div');
+            caja.className = 'bloque-tab';
+            if (bloques.length > 1) {
+              const titulo = document.createElement('div');
+              titulo.className = 'titulo-bloque font-semibold text-sm text-accent';
+              titulo.textContent = sec.name.replace(/^\d+\.\s*/, '');
+              caja.appendChild(titulo);
+            }
+            grid.appendChild(caja);
+          }
+          caja.dataset.k = bloque.k;
+          caja.classList.toggle('actual', bloques.length > 1 && bloque.actual);
+          if (bloque.actual) bloqueActual = caja;
+          const desde = bloques.length > 1 ? 1 : 0;
+          (sec.tabMeasures || []).forEach((m, mIdx) => {
+            if (mIdx < bloque.a || mIdx > bloque.b) return;
+            const esActual = bloque.actual && isTabActive() && mIdx === state.measureIdx;
+            // Solo se vuelve a dibujar el compás que cambió: así la canción completa no se pone lenta
+            const firma = [mIdx, bloque.actual, bloque.actual && mIdx >= state.loopStart && mIdx <= state.loopEnd,
+              esActual, esActual ? [state.step16, state.isPlaying, state.isCountingIn] : '',
+              bloque.actual && String(state.activeEventKey).startsWith(mIdx + ':') ? state.activeEventKey : ''].join();
+            let box = caja.children[desde + mIdx - bloque.a];
+            if (!box || box.dataset.firma !== firma) {
+              const nueva = crearCompas(sec, m, mIdx, bloque, esActual);
+              nueva.dataset.firma = firma;
+              if (box) box.replaceWith(nueva); else caja.appendChild(nueva);
+              box = nueva;
+            }
+            if (esActual) compasActual = box;
+          });
+        });
+        if (bloqueActual && compasActual) seguirParte('tab', grid.parentElement, bloqueActual, compasActual, state.colaPos + ':' + state.measureIdx + ':' + clave);
+      }
 
-        measures.forEach((m, mIdx) => {
-          const inLoop = mIdx >= state.loopStart && mIdx <= state.loopEnd;
-          const isCurrent = isTabActive() && mIdx === state.measureIdx;
+      /* La parte que suena queda al centro. Si la persona se desplaza para revisar otra,
+         se deja de seguir hasta que toque «Volver a la parte actual» o pasen unos segundos
+         y empiece la parte siguiente. */
+      const seguimiento = { libre: 0, claves: {}, partes: {} };
+      function seguirParte(tipo, contenedor, parte, compas, clave) {
+        if (!document.documentElement.classList.contains('full')) return;
+        const parteNueva = seguimiento.partes[tipo] !== state.colaPos;
+        seguimiento.partes[tipo] = state.colaPos;
+        if (seguimiento.libre && parteNueva && Date.now() - seguimiento.libre > 8000) seguimiento.libre = 0;
+        if (!seguimiento.libre && seguimiento.claves[tipo] !== clave) {
+          seguimiento.claves[tipo] = clave;
+          // Con un temporizador: corre después de dibujar el resto y también si la pantalla está en segundo plano
+          setTimeout(() => centrar(contenedor, parte, compas), 0);
+        }
+        pintarVolver();
+      }
+
+      // Busca quién tiene la barra de desplazamiento y centra la parte (o el compás, si la parte no cabe)
+      function centrar(desde, parte, compas) {
+        if (!parte.isConnected) return;
+        let c = desde;
+        while (c && c !== document.body && !(c.scrollHeight > c.clientHeight + 2 && /auto|scroll/.test(getComputedStyle(c).overflowY))) c = c.parentElement;
+        if (!c || c === document.body || !c.offsetHeight) return;
+        const rc = c.getBoundingClientRect(), escala = rc.height / c.offsetHeight || 1;
+        const cabe = parte.getBoundingClientRect().height <= rc.height;
+        const r = (cabe || !compas || !compas.isConnected ? parte : compas).getBoundingClientRect();
+        c.scrollTop += ((r.top + r.height / 2) - (rc.top + rc.height / 2)) / escala;
+      }
+
+      function pintarVolver() {
+        document.getElementById('btn-volver').hidden = !(seguimiento.libre && state.cola.length > 1);
+      }
+
+      function iniciarSeguimiento() {
+        const suelta = e => {
+          if (!e.target.closest('#tab-workspace,#chords-workspace')) return;
+          seguimiento.libre = Date.now();
+          pintarVolver();
+        };
+        document.addEventListener('wheel', suelta, { passive: true });
+        document.addEventListener('touchmove', suelta, { passive: true });
+        document.getElementById('btn-volver').addEventListener('click', () => {
+          seguimiento.libre = 0;
+          seguimiento.claves = {};
+          renderAllPracticeViews();
+          pintarVolver();
+        });
+      }
+
+      function crearCompas(sec, m, mIdx, bloque, esActual) {
+          const isBeg = state.voicingMode === 'beg';
+          const stringLabels = ['e', 'B', 'G', 'D', 'A', 'E'];
+          // El bucle A–B vale solo para la parte que se está tocando
+          const aqui = bloque.actual;
+          const inLoop = !aqui || (mIdx >= state.loopStart && mIdx <= state.loopEnd);
+          const isCurrent = esActual;
+          // Si esta parte no es la actual, primero se salta a ella
+          const ir = accion => {
+            const p = state.isPlaying;
+            seguimiento.libre = 0;
+            if (!aqui) { stopPlayback(false); cargarTramo(bloque.k); }
+            accion();
+            if (!aqui && p) startPlayback();
+          };
 
           const box = document.createElement('div');
           box.className = `tab-measure-box rounded-xl p-3 space-y-1.5 ${inLoop ? 'in-loop' : 'out-of-loop'} ${isCurrent ? 'active-measure' : ''}`;
@@ -2060,11 +2204,10 @@ html.con-letra.con-letra #fretboard-svg-wrap svg{min-width:0!important;width:100
               <span>Compás ${m.num}</span>
               <span class="text-[10px] px-1.5 py-0.5 rounded surface-elevated text-muted">${m.meter || m.beats + '/4'}</span>
             </button>
-            <span class="font-mono text-[10px] text-faint">${inLoop ? 'En bucle A–B' : 'Fuera de bucle'}</span>
+            <span class="font-mono text-[10px] text-faint">${!aqui ? '' : inLoop ? 'En bucle A–B' : 'Fuera de bucle'}</span>
           `;
           header.querySelector('.tab-jump-btn').addEventListener('click', () => {
-            if (sec.type === 'hybrid') state.hybridPlayTarget = 'tab';
-            jumpToTabMeasure(mIdx);
+            ir(() => { if (sec.type === 'hybrid') state.hybridPlayTarget = 'tab'; jumpToTabMeasure(mIdx); });
           });
           box.appendChild(header);
 
@@ -2109,7 +2252,7 @@ html.con-letra.con-letra #fretboard-svg-wrap svg{min-width:0!important;width:100
           (m.events || []).forEach((ev, evIdx) => {
             const x = pL + (ev.beat / beats) * usableW + 14;
             const evKey = `${mIdx}:${evIdx}`;
-            const isActiveEv = state.activeEventKey === evKey;
+            const isActiveEv = aqui && state.activeEventKey === evKey;
 
             svg += `<g class="tab-event-group" data-midx="${mIdx}" data-evidx="${evIdx}">`;
 
@@ -2182,14 +2325,12 @@ html.con-letra.con-letra #fretboard-svg-wrap svg{min-width:0!important;width:100
               e.stopPropagation();
               const mi = Number(g.dataset.midx);
               const ei = Number(g.dataset.evidx);
-              auditionTabEvent(mi, ei);
+              ir(() => auditionTabEvent(mi, ei));
             });
           });
 
           box.appendChild(svgWrap);
-          grid.appendChild(box);
-        });
-        if (state.isPlaying) requestAnimationFrame(() => { const el = document.getElementById('tab-measures-grid').children[state.measureIdx]; if (el) seguir(el); });
+          return box;
       }
 
       /* ---------------------------------------------------------------------
@@ -2437,7 +2578,6 @@ html.con-letra.con-letra #fretboard-svg-wrap svg{min-width:0!important;width:100
         const sec = getSection();
         // Con partes juntas se ven todas seguidas (en la canción completa, la actual y la siguiente)
         let bloques = state.cola.map((t, k) => ({ ...t, k })).filter(t => !t.tab);
-        if (state.completa) bloques = bloques.filter(t => t.k >= state.colaPos).slice(0, 2);
         const enCola = state.cola.length > 0;
         const propios = sec.chordMeasures || [];
         const measures = isTabActive() && bloques.length ? medidasDe(getSong().sections[bloques[0].i], false) : propios;
@@ -2450,6 +2590,7 @@ html.con-letra.con-letra #fretboard-svg-wrap svg{min-width:0!important;width:100
         const activeChordIdx = (!isTabActive()) ? Math.min(state.measureIdx, measures.length - 1) : 0;
         const curBeatInt = Math.floor(state.step16 / 4);
 
+        let tarjetaActiva = null, tituloActivo = null;
         bloques.forEach((bloque) => {
         const lista = medidasDe(song.sections[bloque.i], false);
         if (enCola) {
@@ -2457,6 +2598,7 @@ html.con-letra.con-letra #fretboard-svg-wrap svg{min-width:0!important;width:100
           t.className = 'titulo-bloque font-semibold text-xs text-accent';
           t.textContent = song.sections[bloque.i].name.replace(/^\d+\.\s*/, '');
           timeline.appendChild(t);
+          if (bloque.k === state.colaPos) tituloActivo = t;
         }
         lista.forEach((m, idx) => {
           if (idx < bloque.a || idx > bloque.b) return;
@@ -2480,7 +2622,7 @@ html.con-letra.con-letra #fretboard-svg-wrap svg{min-width:0!important;width:100
             <div class="font-serif text-lg font-bold truncate">${display}</div>
             <div class="font-mono text-[10px] text-muted truncate">${m.strum || ''}</div>
           `;
-          if (isActive && state.isPlaying) requestAnimationFrame(() => seguir(card));
+          if (isActive) { tarjetaActiva = card; }
           card.addEventListener('click', () => {
             if (enCola && bloque.k !== state.colaPos) { const p = state.isPlaying; stopPlayback(false); cargarTramo(bloque.k); jumpToChordMeasure(idx); if (p) startPlayback(); return; }
             if (sec.type === 'hybrid') state.hybridPlayTarget = 'chords';
@@ -2489,6 +2631,14 @@ html.con-letra.con-letra #fretboard-svg-wrap svg{min-width:0!important;width:100
           timeline.appendChild(card);
         });
         });
+
+        if (tarjetaActiva) {
+          // La parte actual va desde su título hasta su último compás
+          const finParte = (() => { let e = tarjetaActiva; while (e.nextElementSibling && !e.nextElementSibling.classList.contains('titulo-bloque')) e = e.nextElementSibling; return e; })();
+          const arriba = tituloActivo || timeline.firstElementChild;
+          const parte = { get isConnected() { return finParte.isConnected; }, getBoundingClientRect() { const a = arriba.getBoundingClientRect(), b = finParte.getBoundingClientRect(); return { top: a.top, height: b.bottom - a.top }; } };
+          seguirParte('acordes', timeline, parte, tarjetaActiva, state.colaPos + ':' + activeChordIdx + ':' + song.id);
+        }
 
         // Current & Next Chord Diagrams
         const curM = measures[activeChordIdx] || measures[0];
@@ -2561,6 +2711,9 @@ html.con-letra.con-letra #fretboard-svg-wrap svg{min-width:0!important;width:100
         }
         if (acordesEnCola()) chordWs.classList.remove('hidden');
         tabWs.parentElement.classList.toggle('dos', !tabWs.classList.contains('hidden') && !chordWs.classList.contains('hidden'));
+        // Con varias partes juntas, en pantalla completa se ve en grande la que está sonando
+        tabWs.parentElement.classList.toggle('solo-activa', state.cola.length > 1);
+        tabWs.parentElement.classList.toggle('ver-tab', isTabActive());
       }
 
       function renderMasterBeats() {
@@ -2801,6 +2954,8 @@ html.con-letra.con-letra #fretboard-svg-wrap svg{min-width:0!important;width:100
 
       function startPlayback() {
         audio.ensure();
+        seguimiento.libre = 0;
+        seguimiento.claves = {};
         const list = getActiveMeasures();
         if (!list.length) return;
 
@@ -3267,7 +3422,7 @@ html.con-letra.con-letra #fretboard-svg-wrap svg{min-width:0!important;width:100
       }
 
       function iniciarZoom() {
-        const MIN = 60, MAX = 160, PASO = 10;
+        const MIN = 50, MAX = 160, PASO = 10;
         let z = 100;
         try { const g = Number(localStorage.getItem('guitarlab_zoom')); if (g >= MIN && g <= MAX) z = g; } catch (e) { /* tamaño normal */ }
         const menos = document.getElementById('zoom-menos'), mas = document.getElementById('zoom-mas'), valor = document.getElementById('zoom-valor');
@@ -3277,6 +3432,8 @@ html.con-letra.con-letra #fretboard-svg-wrap svg{min-width:0!important;width:100
           valor.textContent = z + '%';
           menos.disabled = z === MIN;
           mas.disabled = z === MAX;
+          window.dispatchEvent(new Event('resize'));
+          seguimiento.claves = {};
         };
         const cambia = n => { pon(n); try { localStorage.setItem('guitarlab_zoom', String(z)); } catch (e) { /* queda solo por esta vez */ } };
         menos.addEventListener('click', () => cambia(z - PASO));
@@ -3286,6 +3443,7 @@ html.con-letra.con-letra #fretboard-svg-wrap svg{min-width:0!important;width:100
       }
 
       function init() {
+        iniciarSeguimiento();
         iniciarZoom();
         iniciarPartes();
         iniciarSecciones();
