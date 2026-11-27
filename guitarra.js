@@ -4,7 +4,7 @@
 (function (raiz) {
   'use strict';
   // Número de versión que se muestra en la app. Debe ser igual a VERSION de sw.js
-  raiz.APP_VERSION = 'gd-v20';
+  raiz.APP_VERSION = 'gd-v21';
 
   // Ruido repetible: la misma nota suena igual cada vez
   function azar(semilla) {

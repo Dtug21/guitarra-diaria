@@ -429,6 +429,25 @@ html.full #btn-salir{display:inline-flex}
  html.full .derecha.solo-activa>.mandos>*{flex:none;margin:0}
  html.full .derecha.solo-activa>.mandos>:last-child{order:-1;border-top:0;padding-top:0}
 }
+/* Tamaño propio de cada dibujo: así el zoom lo achica o lo agranda.
+   (Si ocuparan «todo el ancho», al alejar crecerían, porque el resto deja más espacio.) */
+@media (min-width:700px){
+ html.full #fretboard-svg-wrap svg{display:block;margin:0 auto;width:100%!important;max-width:700px!important;min-width:0!important;height:auto!important;max-height:none!important}
+ html.full #tab-measures-grid{grid-template-columns:repeat(auto-fill,min(340px,100%))!important;justify-content:center}
+ html.full .bloque-tab{justify-content:center}
+ html.full #chord-timeline{grid-template-columns:repeat(auto-fill,130px);justify-content:center}
+ html.full:not(.sin-linea):not(.sin-acordes) .derecha:not(.dos) #chords-workspace:not(.hidden),
+ html.full:not(.sin-linea):not(.sin-acordes) .derecha.solo-activa #chords-workspace:not(.hidden){grid-template-columns:minmax(0,1fr) 290px!important}
+ html.full #cur-chord-svg svg{height:250px!important;width:auto!important;max-width:100%}
+ html.full #next-chord-svg svg{height:170px!important;width:auto!important;max-width:100%}
+ html.full .derecha.dos:not(.solo-activa) #cur-chord-svg svg,html.full .derecha.dos:not(.solo-activa) #next-chord-svg svg{height:140px!important}
+ html.full.sin-linea .derecha:not(.dos) #cur-chord-svg svg{height:420px!important}
+ html.full.sin-linea .derecha:not(.dos) #next-chord-svg svg{height:280px!important}
+}
+@media (min-width:700px) and (orientation:portrait){
+ html.full:not(.sin-linea) #cur-chord-svg svg{height:230px!important}
+ html.full:not(.sin-linea) #next-chord-svg svg{height:150px!important}
+}
 /* Letra: se abre solo cuando se pide; la escribe o pega la persona y queda en este aparato */
 :root{--letra-ancho:min(320px,28vw);--letra-alto:34vh}
 #letra-panel{position:fixed;z-index:40;right:0;bottom:0;top:var(--letra-arriba,60px);width:var(--letra-ancho);display:flex;flex-direction:column;gap:8px;padding:10px 12px;background:var(--bg-card);border-left:1px solid var(--border-strong);border-top:1px solid var(--border-color)}

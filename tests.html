@@ -321,6 +321,20 @@ function cargar(src){return new Promise(r=>{$app.onload=()=>{const w=$app.conten
     for(const [k,v] of [['guitarlab_zoom',zAntes],['guitarlab_vista',vAntes]])v===null?localStorage.removeItem(k):localStorage.setItem(k,v);
     [$app.style.width,$app.style.height]=antes; }
 
+  // ---------- al alejar, TODO se achica (mástil, tablatura y acordes) ----------
+  { const antes=[$app.style.width,$app.style.height],zAntes=localStorage.getItem('guitarlab_zoom'),vAntes=localStorage.getItem('guitarlab_vista');localStorage.removeItem('guitarlab_vista');
+    for(const [an,al] of [[1480,924],[924,1480]]){ $app.style.width=an+'px';$app.style.height=al+'px';localStorage.removeItem('guitarlab_zoom');
+      w=await cargar('studio.html?full=1&escala='+an);const d=w.document,t=id=>d.getElementById(id),nom='Escala '+an+'×'+al+': ';
+      const elige=async id=>{t('song-selector').value=id;t('song-selector').dispatchEvent(new w.Event('change'));await espera(400)};
+      const mide=sel=>sel.map(x=>d.querySelector(x).getBoundingClientRect().width);
+      const prueba=async(nombre,sel)=>{const a=mide(sel);for(let i=0;i<3;i++)t('zoom-menos').click();await espera(300);const b=mide(sel);for(let i=0;i<2;i++)t('zoom-menos').click();await espera(300);const c=mide(sel);t('zoom-valor').click();for(let i=0;i<2;i++)t('zoom-mas').click();await espera(300);const e=mide(sel);t('zoom-valor').click();await espera(200);
+        ok(nom+nombre,a.every((x,i)=>b[i]<x*.82&&c[i]<b[i]*.82&&e[i]>=x*.95/* al acercar crece hasta el ancho de su columna */),sel.map((s,i)=>s+' '+[a[i],b[i],c[i],e[i]].map(Math.round).join('/')).join(' | '))};
+      await elige('barro-tal-vez');await prueba('el mástil y la tablatura siguen el zoom',['#fretboard-svg-wrap svg','.tab-measure-box','.tab-measure-box svg']);
+      await elige('saturno-pablo-alboran');await prueba('los acordes siguen el zoom',['#cur-chord-svg svg','#next-chord-svg svg','#chord-timeline .measure-card']);
+    }
+    for(const [k,v] of [['guitarlab_zoom',zAntes],['guitarlab_vista',vAntes]])v===null?localStorage.removeItem(k):localStorage.setItem(k,v);
+    [$app.style.width,$app.style.height]=antes; }
+
   // ---------- todas las partes a la vista y la actual al centro ----------
   { const antes=[$app.style.width,$app.style.height],zAntes=localStorage.getItem('guitarlab_zoom'),vAntes=localStorage.getItem('guitarlab_vista');localStorage.removeItem('guitarlab_vista');localStorage.removeItem('guitarlab_zoom');
     for(const [an,al] of [[1480,924],[924,1480]]){ $app.style.width=an+'px';$app.style.height=al+'px';localStorage.removeItem('guitarlab_zoom');

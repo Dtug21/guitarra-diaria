@@ -1,5 +1,5 @@
 // Guarda la app para que abra sin internet. Sube VERSION cuando cambies archivos.
-const VERSION = 'gd-v20', FONTS = 'gd-fonts', SONIDOS = 'gd-sonidos';
+const VERSION = 'gd-v21', FONTS = 'gd-fonts', SONIDOS = 'gd-sonidos';
 const FILES = ['./', './index.html', './studio.html', './guitarra.js', './sonidos/indice.js', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(FILES.map(f => new Request(f, { cache: 'reload' })))).then(() => self.skipWaiting()));
