@@ -248,115 +248,131 @@ html.full #btn-salir{display:inline-flex}
  html.full .zona,html.full .zona>*{min-height:0;min-width:0}
  html.full .zona .card{padding:10px}
  html.full .zona .card>*+*{margin-top:8px}
+ html.full .mandos>:first-child{flex-direction:column;align-items:stretch;gap:6px}
  html.full #mode-helper{display:none}
  html.full body>header nav,html.full body>header>div{scrollbar-width:none}
  html.full #chords-workspace:not(.hidden),html.full #tab-workspace:not(.hidden){display:flex;flex-direction:column;gap:8px}
  html.full #chords-workspace>*,html.full #tab-workspace>*{margin:0}
 }
-/* Orden de práctica: partes arriba, controles en una línea y lo que se está tocando al centro */
-#btn-opciones,#btn-explica,#btn-vista,#btn-secciones,#panel-secciones,#cur-golpes,#next-cuando{display:none}
+@media (min-width:1000px) and (orientation:landscape){
+ html.full .zona{display:grid;grid-template-columns:190px minmax(0,1fr);gap:8px;height:100%;align-items:stretch}
+ html.full .zona>aside{grid-column:1;overflow:auto;padding:8px}
+ html.full .zona>aside #section-list{max-height:none}
+ html.full .zona>.derecha{grid-column:2;display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);grid-template-rows:minmax(0,auto) minmax(0,1fr);gap:8px;height:100%}
+ html.full .derecha>*{margin:0!important}
+ html.full .derecha>.mandos{grid-column:1;grid-row:1;overflow:auto}
+ html.full .derecha>.consejo{grid-column:1;grid-row:2;align-self:start;max-height:100%;overflow:auto;padding:10px}
+ html.full #chords-workspace,html.full #tab-workspace{grid-column:2;grid-row:1/3;height:100%}
+ html.full .mandos h1,html.full .mandos h2,html.full .mandos h3{font-size:16px;line-height:1.3}
+ /* La línea de tiempo arriba y, debajo, el acorde actual y el próximo */
+ html.full #chords-workspace>:first-child{flex:1;min-height:110px;overflow:auto}
+ html.full #chords-workspace>:last-child{flex:none}
+ html.full #cur-chord-svg svg,html.full #next-chord-svg svg{height:min(26vh,210px);width:auto}
+ html.full #tab-workspace>:nth-child(2){order:-2;flex:none}
+ html.full #tab-workspace>:nth-child(3){order:-1;flex:1;min-height:150px;overflow:auto}
+ html.full #tab-workspace>:nth-child(1){flex:none}
+ html.full #fretboard-svg-wrap svg{max-height:30vh}
+}
+@media (min-width:1000px) and (orientation:landscape){
+ html.full .derecha.dos{grid-template-rows:minmax(0,3fr) minmax(0,2fr)}
+ html.full .derecha.dos>#tab-workspace{grid-row:1;overflow:auto}
+ html.full .derecha.dos>#chords-workspace{grid-row:2;overflow:auto}
+}
 @media (min-width:700px){
- html.full .zona{display:flex;flex-direction:column;gap:6px;height:100%;align-items:stretch}
- html.full .zona>*{margin:0!important}
- html.full .zona>aside.card{flex:none;display:flex;align-items:center;gap:8px;padding:6px 8px}
- html.full .zona>aside.card>*{margin:0}
- html.full .zona>aside>:first-child,html.full .zona>aside .ayuda-juntar{display:none}
- html.full .zona>aside #btn-completa{width:auto;flex:none;padding:9px 12px}
- html.full .zona>aside #section-list{flex:1;display:flex;gap:6px;overflow-x:auto;max-height:none;padding:0;position:relative;scrollbar-width:none}
- html.full .zona>aside #section-list>*{flex:0 0 auto;margin:0;padding:4px 6px 4px 10px;gap:6px}
- html.full .zona>aside #section-list>*>:first-child>:first-child span{max-width:240px}
- html.full .zona>aside #section-list>*>:first-child>:last-child{display:none}
-
- html.full .zona>.derecha{flex:1;display:flex;flex-direction:column;gap:6px}
- html.full .derecha>*{margin:0!important;flex:none}
-
- /* Controles en una línea; lo demás aparece solo al pedirlo */
- html.full .derecha>.mandos.card{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:6px 10px;max-height:52vh;overflow:auto}
- html.full .mandos.card>*,html.full .mandos .transporte>*,html.full .mandos .velocidad>*,html.full .mandos .info-sec>*{margin:0}
- html.full .mandos .info-sec,html.full .mandos .transporte,html.full .mandos .velocidad,html.full .mandos .vel-fila,html.full .mandos .transporte>:first-child{display:contents}
- html.full .mandos #cola-info{order:-1;flex:1 0 100%;max-height:none;white-space:nowrap;overflow-x:auto;line-height:1.9;scrollbar-width:none}
- html.full .mandos .vel-nombre{order:2;display:flex;gap:6px;align-items:center}
- html.full .mandos .vel-nombre>:first-child{display:none}
- html.full .mandos #speed-slider{order:3;flex:1 1 120px;width:auto}
- html.full .mandos .botones{order:0;flex-wrap:nowrap}
- html.full .mandos .pulso{order:1;padding:8px 10px}
- html.full .mandos #btn-vista:not([hidden]),html.full .mandos #btn-opciones,html.full .mandos #btn-explica,html.full .mandos #btn-secciones{display:inline-block;order:4;padding:9px 12px;border-radius:12px;border:1px solid var(--border-strong);font-size:12px;font-weight:600;cursor:pointer}
- html.full .mandos [aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent)}
- html.full .mandos .modo-voz,html.full .mandos .vel-presets,html.full .mandos .vel-checks,html.full .mandos .explica{display:none}
- html.full.con-opciones .mandos .vel-presets,html.full.con-opciones .mandos .vel-checks{display:flex;order:6;flex:1 0 100%}
- html.full.con-opciones .mandos .modo-voz{display:block;order:7}
- html.full.con-opciones .mandos #mode-helper{display:none}
- html.full.con-explica .mandos .explica{display:block;order:6;flex:1 0 100%}
- html.full .mandos h2{font-size:16px;line-height:1.3}
- html.full.con-secciones .mandos #panel-secciones{display:flex;flex-wrap:wrap;align-items:center;gap:6px;order:6;flex:1 0 100%;font-size:12px}
- #panel-secciones button{padding:8px 12px;border-radius:999px;border:1px solid var(--border-strong);font-weight:600;cursor:pointer;opacity:.65}
- html.full .mandos #panel-secciones button[aria-pressed="true"]{opacity:1}
- #panel-secciones button[aria-pressed="true"]::before{content:'✓ '}
-
- /* Secciones que se pueden ocultar mientras no se usan */
- html.full.sin-partes .zona>aside.card,html.full.sin-orden .mandos #cola-info,html.full.sin-linea #chords-workspace>:first-child,
- html.full.sin-proximo #chords-workspace>:last-child>div>:last-child,html.full.sin-consejo .derecha>.consejo,
- html.full.sin-mastil #tab-workspace>:nth-child(2),html.full.sin-bucle #tab-workspace>:nth-child(1){display:none}
- html.full.sin-proximo #chords-workspace>:last-child>div{grid-template-columns:minmax(0,1fr)}
-
- /* Centro: solo lo que se está tocando */
- html.full .derecha>#chords-workspace:not(.hidden),html.full .derecha>#tab-workspace:not(.hidden){flex:1 1 0;min-height:0;overflow:auto}
- html.full .derecha.dos.ver-tab>#chords-workspace,html.full .derecha.dos:not(.ver-tab)>#tab-workspace{display:none}
-
- /* Acordes: actual grande, próximo al lado y la línea de tiempo en una fila */
- html.full #chords-workspace>:last-child{order:-1;flex:1;min-height:0;display:flex;padding:8px;overflow:auto}
- html.full #chords-workspace>:last-child>div{flex:1;display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:8px;align-items:stretch}
- html.full #chords-workspace>:last-child>div>div{grid-column:auto;justify-content:center;padding:8px 10px}
- html.full #chords-workspace>:last-child>div>:first-child{border:2px solid var(--accent)}
- html.full #cur-chord-svg svg{height:clamp(150px,34vh,380px);width:auto}
- html.full #next-chord-svg svg{height:clamp(100px,21vh,240px);width:auto}
- html.full #cur-chord-name{font-size:clamp(34px,7vh,68px)}
- html.full #next-chord-name{font-size:clamp(22px,4vh,38px)}
- html.full #cur-chord-formula,html.full #cur-chord-badge,html.full #next-chord-formula{display:none}
- html.full #cur-chord-svg+div{max-width:min(480px,100%)}
- html.full #cur-golpes{display:grid;grid-template-columns:repeat(var(--por-fila,8),minmax(0,1.9em));justify-content:center;gap:4px;margin-top:6px;font-size:18px}
- html.full #cur-golpes span{min-width:0;text-align:center;font-size:clamp(20px,3.6vh,34px);line-height:1.4;border-radius:8px;border:1px solid transparent}
- html.full #cur-golpes span{font-size:clamp(18px,2.8vh,28px)}
- html.full #cur-golpes span.actual{background:var(--accent);color:#141413;font-weight:700}
- html.full #next-cuando{display:block;margin-top:6px;font-size:15px;font-weight:600;color:var(--accent);text-align:center}
- html.full #chords-workspace>:first-child{flex:none;padding:6px 8px}
- html.full #chords-workspace>:first-child>:first-child{display:none}
- html.full #chord-timeline{display:flex;gap:6px;overflow-x:auto;position:relative;margin:0;scrollbar-width:none}
- html.full #chord-timeline>*{flex:0 0 128px}
- html.full #chord-timeline>.titulo-bloque{flex:0 0 auto;align-self:center;max-width:110px;line-height:1.2}
- html.full #chord-timeline .measure-card{padding:6px 8px;gap:2px}
-
- /* Tablatura: bucle en una línea, mástil entero y la tablatura ocupando el resto */
- html.full #tab-workspace>*{flex:none}
- html.full #tab-workspace>:nth-child(1){display:flex;align-items:center;gap:10px;padding:5px 10px}
- html.full #tab-workspace>:nth-child(1)>*{margin:0}
- html.full #tab-workspace>:nth-child(1)>:first-child{flex:none;flex-wrap:nowrap}
- html.full #tab-workspace>:nth-child(1)>:first-child>:first-child>:first-child{display:none}
- html.full #loop-presets{flex:1;min-width:0;flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;scrollbar-width:none}
- html.full #loop-presets>*{flex:none}
- html.full #tab-workspace>:nth-child(2){padding:6px 10px}
- html.full #tab-workspace>:nth-child(2)>:first-child{justify-content:flex-end}
- html.full #tab-workspace>:nth-child(2)>:first-child>:first-child{display:none}
- html.full #fretboard-svg-wrap{margin-top:4px}
- html.full #fretboard-svg-wrap svg{max-height:25vh}
- html.full #tab-workspace>:nth-child(3){flex:1 0 170px;height:170px;min-height:0;overflow:auto;padding:8px}
- html.full #tab-workspace>:nth-child(3)>:first-child{display:none}
- html.full #tab-measures-grid{margin:0;grid-template-columns:repeat(auto-fill,minmax(400px,1fr))}
-
- /* Consejo: una franja abajo */
- html.full .derecha>.consejo{padding:6px 12px;align-items:center}
- html.full .consejo>:first-child{display:none}
- html.full .consejo>:last-child{display:flex;align-items:center;gap:10px}
- html.full .consejo>:last-child>*{margin:0}
- html.full .consejo>:last-child>:first-child{flex:none;flex-wrap:nowrap}
- html.full .consejo>:last-child>:first-child>:first-child{display:none}
- html.full #coach-text{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+ /* Juntas: acorde actual y próximo en chico, debajo de la línea de tiempo */
+ html.full .derecha.dos>#chords-workspace>:first-child{min-height:64px}
+ html.full .derecha.dos>#chords-workspace>:last-child{padding:4px 8px}
+ html.full .derecha.dos>#chords-workspace>:last-child>div{gap:6px}
+ html.full .derecha.dos>#chords-workspace>:last-child>div>div{padding:4px 8px}
+ html.full .derecha.dos>#chords-workspace>:last-child>div>div>:first-child{margin:0}
+ html.full .derecha.dos>#chords-workspace button[id^="btn-"],html.full .derecha.dos #cur-chord-formula,html.full .derecha.dos #cur-chord-badge,html.full .derecha.dos #cur-chord-note,html.full .derecha.dos #next-chord-formula{display:none}
+ html.full .derecha.dos #cur-chord-svg svg,html.full .derecha.dos #next-chord-svg svg{height:min(13vh,120px);width:auto}
+ html.full .derecha.dos #next-chord-name{font-size:14px}
+ html.full .derecha.dos>#chords-workspace>:last-child>div>div:last-child>.mt-2{margin-top:0}
+}
+@media (min-width:700px){
+ /* Tablatura y acordes juntos: el mástil va arriba y entero; la tablatura se desplaza debajo */
+ html.full .derecha.dos>#tab-workspace>:nth-child(2){order:-3;flex:none;padding:6px 10px}
+ html.full .derecha.dos>#tab-workspace>:nth-child(2) p{display:none}
+ html.full .derecha.dos #fretboard-svg-wrap svg{max-height:19vh}
+ html.full .derecha.dos>#tab-workspace>:nth-child(3){order:-2;flex:1 0 170px;height:170px;min-height:0;overflow:auto}
 }
 @media (min-width:700px) and (orientation:portrait){
- /* En vertical: el rasgueo va debajo del diagrama y la tablatura en grande, un compás por fila */
- html.full #chords-workspace>:last-child>div>:first-child>:last-child{flex-direction:column}
- html.full #cur-chord-svg+div{max-width:100%;text-align:center}
- html.full #tab-measures-grid{grid-template-columns:minmax(0,1fr)}
+ html.full .derecha.dos>#tab-workspace,html.full .derecha.dos>#chords-workspace{flex:1 1 0;min-height:260px;overflow:auto}
+ html.full .derecha.dos>#tab-workspace{min-height:430px}
+}
+@media (min-width:1000px) and (max-width:1300px) and (orientation:landscape){
+ html.full .zona{grid-template-columns:180px minmax(0,1fr)}
+ html.full .zona>.derecha{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+}
+@media (min-width:700px) and (orientation:portrait){
+ html.full .zona{display:flex;flex-direction:column;gap:8px;height:100%;align-items:stretch}
+ html.full .zona>*{margin:0!important}
+ html.full .zona>aside{flex:none;padding:8px}
+ html.full .zona>aside>:first-child{display:none}
+ html.full .zona>aside #section-list{display:flex;gap:6px;overflow-x:auto;max-height:none}
+ html.full .zona>aside #section-list>*{flex:0 0 190px;margin:0}
+ html.full .zona>.derecha{flex:1;display:flex;flex-direction:column;gap:8px}
+ html.full .derecha>*{margin:0!important;flex:none}
+ html.full #chords-workspace:not(.hidden),html.full #tab-workspace:not(.hidden){flex:1;overflow:auto}
+}
+/* Acorde actual y próximo en una columna a la derecha de la línea de tiempo */
+#btn-secciones,#panel-secciones{display:none}
+@media (min-width:700px){
+ html.full #chords-workspace:not(.hidden){display:grid;grid-template-columns:minmax(0,1fr) clamp(230px,23vw,320px);grid-template-rows:minmax(0,1fr);gap:8px}
+ html.full #chords-workspace>:first-child{grid-column:1;grid-row:1;min-height:0;overflow:auto}
+ html.full #chords-workspace>:last-child{grid-column:2;grid-row:1;min-height:0;overflow:auto;padding:6px}
+ html.full #chord-timeline{grid-template-columns:repeat(auto-fill,minmax(118px,1fr))}
+ html.full #chords-workspace>:last-child>div{display:flex;flex-direction:column;gap:6px;min-height:100%}
+ html.full #chords-workspace>:last-child>div>div{margin:0;padding:6px;justify-content:center;width:100%}
+ html.full #chords-workspace>:last-child>div>:first-child>:first-child{flex-wrap:wrap;gap:4px}
+ html.full #chords-workspace>:last-child>div>:first-child{flex:3 0 auto;border:2px solid var(--accent)}
+ html.full #chords-workspace>:last-child>div>:last-child{flex:2 0 auto}
+ html.full #chords-workspace>:last-child>div>:first-child>:last-child{flex-direction:column;gap:4px}
+ html.full #cur-chord-svg+div{text-align:center}
+ html.full #cur-chord-svg svg{height:min(28vh,270px);width:auto;max-width:100%}
+ html.full #next-chord-svg svg{height:min(19vh,180px);width:auto;max-width:100%}
+ html.full #cur-chord-formula,html.full #cur-chord-badge{display:none}
+ /* Con tablatura arriba, la fila de acordes es baja: actual y próximo lado a lado */
+ html.full .derecha.dos>#chords-workspace:not(.hidden){grid-template-columns:minmax(0,1fr) clamp(280px,28vw,400px)}
+ html.full .derecha.dos>#chords-workspace>:last-child>div{flex-direction:row}
+ html.full .derecha.dos>#chords-workspace>:last-child>div>div{flex:1 1 0;min-width:0}
+ html.full .derecha.dos #cur-chord-svg svg,html.full .derecha.dos #next-chord-svg svg{height:min(15vh,200px);max-width:100%}
+
+ /* Botón «Secciones» y su lista */
+ html.full #btn-secciones{display:inline-block}
+ html.full #panel-secciones:not([hidden]){display:flex;flex-wrap:wrap;gap:8px;position:fixed;z-index:60;right:10px;top:var(--panel-arriba,60px);width:min(430px,92vw);max-height:70vh;overflow:auto;padding:12px;border-radius:14px;background:var(--bg-card);border:1px solid var(--border-strong);box-shadow:0 12px 30px rgba(0,0,0,.35)}
+ #panel-secciones p{flex:1 0 100%;margin:0;font-size:12px;opacity:.75}
+ #panel-secciones button{padding:10px 13px;border-radius:999px;border:1px solid var(--border-strong);font-size:13px;font-weight:600;cursor:pointer;color:inherit;opacity:.6}
+ #panel-secciones button[aria-pressed="true"]{opacity:1;background:var(--accent-soft);border-color:var(--accent)}
+ #panel-secciones button[aria-pressed="true"]::before{content:'✓ '}
+ #panel-secciones .rapido{opacity:1;border-radius:10px}
+
+ /* Lo que está oculto */
+ html.full.sin-bloques .zona>aside,html.full.sin-pestanas body>header>div:last-child,html.full.sin-orden #cola-info,
+ html.full.sin-explicacion .mandos .explica,html.full.sin-opciones .mandos .vel-presets,html.full.sin-opciones .mandos .vel-checks,html.full.sin-opciones .mandos .modo-voz,
+ html.full.sin-consejo .derecha>.consejo,html.full.sin-linea #chords-workspace>:first-child,html.full.sin-acordes #chords-workspace>:last-child,
+ html.full.sin-mastil #tab-workspace>:nth-child(2),html.full.sin-bucle #tab-workspace>:nth-child(1){display:none!important}
+ html.full.sin-explicacion.sin-opciones .mandos .info-sec{display:none}
+ /* Sin línea de tiempo, los acordes usan todo el espacio; sin acordes, la línea de tiempo */
+ html.full.sin-linea #chords-workspace:not(.hidden){grid-template-columns:minmax(0,1fr)!important}
+ html.full.sin-linea #chords-workspace>:last-child{grid-column:1}
+ html.full.sin-linea #chords-workspace>:last-child>div{flex-direction:row}
+ html.full.sin-linea #chords-workspace>:last-child>div>div{flex:1 1 0}
+ html.full.sin-linea .derecha:not(.dos) #cur-chord-svg svg{height:min(46vh,440px)}
+ html.full.sin-linea .derecha:not(.dos) #next-chord-svg svg{height:min(30vh,290px)}
+ html.full.sin-acordes #chords-workspace:not(.hidden){grid-template-columns:minmax(0,1fr)!important}
+ html.full.sin-linea.sin-acordes #chords-workspace{display:none!important}
+}
+@media (min-width:1000px) and (orientation:landscape){
+ html.full.sin-bloques .zona{grid-template-columns:minmax(0,1fr)}
+ html.full.sin-bloques .zona>.derecha{grid-column:1}
+ /* Con menos texto, la columna de controles se angosta y el centro crece */
+ html.full.sin-explicacion .zona>.derecha{grid-template-columns:minmax(300px,360px) minmax(0,1fr)}
+}
+@media (min-width:700px) and (orientation:portrait){
+ html.full:not(.sin-linea) .derecha:not(.dos) #cur-chord-svg svg{height:min(15vh,230px)}
+ html.full:not(.sin-linea) .derecha:not(.dos) #next-chord-svg svg{height:min(10vh,150px)}
 }
 /* Letra: se abre solo cuando se pide; la escribe o pega la persona y queda en este aparato */
 :root{--letra-ancho:min(320px,28vw);--letra-alto:34vh}
@@ -375,7 +391,7 @@ html.con-letra.con-letra body>main{max-width:none;padding-right:calc(var(--letra
 html.con-letra.con-letra #fretboard-svg-wrap svg{min-width:0!important;width:100%;height:auto}
 @media (min-width:700px) and (orientation:portrait){
  /* Vertical con la letra abierta: se esconde lo secundario para que sigan a la vista la tablatura o los acordes */
- html.full.con-letra .derecha>.consejo{display:none}
+ html.full.con-letra .zona>aside,html.full.con-letra #sec-desc,html.full.con-letra #sec-practica,html.full.con-letra .derecha>.consejo{display:none}
 }
 @media (max-width:999px),(orientation:portrait){
  #letra-panel{left:0;top:auto;width:auto;height:var(--letra-alto);border-left:0;border-top:1px solid var(--border-strong)}
@@ -432,6 +448,8 @@ html.con-letra.con-letra #fretboard-svg-wrap svg{min-width:0!important;width:100
 
         <button id="btn-letra" type="button" aria-pressed="false" aria-controls="letra-panel" class="px-3 py-2 rounded-xl text-xs font-semibold surface-elevated hover:border-[var(--accent)] cursor-pointer">📝 Letra</button>
 
+        <button id="btn-secciones" type="button" aria-expanded="false" aria-controls="panel-secciones" class="px-3 py-2 rounded-xl text-xs font-semibold surface-elevated hover:border-[var(--accent)] cursor-pointer">▦ Secciones</button>
+
         <button id="btn-salir" type="button" class="px-3 py-2 rounded-xl text-xs font-semibold surface-elevated hover:border-[var(--accent)] cursor-pointer items-center">✕ Salir</button>
 
         <!-- Theme Toggle -->
@@ -466,6 +484,7 @@ html.con-letra.con-letra #fretboard-svg-wrap svg{min-width:0!important;width:100
       </div>
     </div>
   </header>
+  <div id="panel-secciones" hidden></div>
 
   <!-- ============================================================
        MAIN WORKSPACE
@@ -529,9 +548,9 @@ html.con-letra.con-letra #fretboard-svg-wrap svg{min-width:0!important;width:100
             </div>
 
             <!-- Transport Controls -->
-            <div class="transporte pt-3.5 border-t space-y-3.5" style="border-color: var(--border-color);">
+            <div class="pt-3.5 border-t space-y-3.5" style="border-color: var(--border-color);">
               <div class="flex flex-wrap items-center justify-between gap-3">
-                <div class="botones flex items-center gap-2 flex-wrap">
+                <div class="flex items-center gap-2 flex-wrap">
                   <button id="btn-play" type="button"
                     class="px-5 py-2.5 rounded-xl font-semibold text-sm flex items-center gap-2 transition-all cursor-pointer bg-accent text-[#141413] hover:opacity-95 shadow-sm">
                     <span id="play-icon">▶</span>
@@ -554,7 +573,7 @@ html.con-letra.con-letra #fretboard-svg-wrap svg{min-width:0!important;width:100
                 </div>
 
                 <!-- Live Beat Indicator & Measure Counter -->
-                <div class="pulso flex items-center gap-3 px-3.5 py-2 rounded-xl surface-subtle">
+                <div class="flex items-center gap-3 px-3.5 py-2 rounded-xl surface-subtle">
                   <span id="live-measure-badge" class="font-mono text-xs font-semibold text-accent">C.1</span>
                   <span class="opacity-30">|</span>
                   <span id="status-badge" class="font-mono text-xs text-muted">Listo</span>
@@ -568,9 +587,9 @@ html.con-letra.con-letra #fretboard-svg-wrap svg{min-width:0!important;width:100
               </div>
 
               <!-- Speed Control + Presets + Audio Toggles -->
-              <div class="velocidad p-3.5 rounded-xl surface-subtle space-y-3">
-                <div class="vel-fila flex flex-wrap items-center justify-between gap-2">
-                  <div class="vel-nombre flex items-center gap-2">
+              <div class="p-3.5 rounded-xl surface-subtle space-y-3">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <div class="flex items-center gap-2">
                     <span class="text-xs font-medium text-muted">Velocidad:</span>
                     <span id="speed-display" class="font-mono text-sm font-bold text-accent">55% · 56 BPM</span>
                   </div>
@@ -605,11 +624,6 @@ html.con-letra.con-letra #fretboard-svg-wrap svg{min-width:0!important;width:100
                 </div>
               </div>
             </div>
-            <button id="btn-vista" type="button" hidden></button>
-            <button id="btn-opciones" type="button" aria-pressed="false">⚙ Opciones</button>
-            <button id="btn-explica" type="button" aria-pressed="false">📖 Explicación</button>
-            <button id="btn-secciones" type="button" aria-pressed="false">▦ Secciones</button>
-            <div id="panel-secciones"><span class="text-muted">En pantalla:</span></div>
           </div>
 
           <!-- ======================================================
@@ -714,7 +728,6 @@ html.con-letra.con-letra #fretboard-svg-wrap svg{min-width:0!important;width:100
                       <p id="cur-chord-formula" class="font-mono text-xs text-muted">x-0-2-2-2-0</p>
                       <span id="cur-chord-badge" class="inline-block text-[10px] px-2 py-0.5 rounded-md bg-accent-soft text-accent font-medium">Principiante</span>
                       <p id="cur-chord-note" class="text-xs text-muted leading-relaxed"></p>
-                      <div id="cur-golpes" aria-label="Rasgueo de este compás"></div>
                     </div>
                   </div>
                 </div>
@@ -729,7 +742,6 @@ html.con-letra.con-letra #fretboard-svg-wrap svg{min-width:0!important;width:100
                   <div class="mt-2 text-center">
                     <h4 id="next-chord-name" class="font-serif text-lg font-semibold">D/F#</h4>
                     <p id="next-chord-formula" class="font-mono text-[11px] text-muted">2-x-0-2-3-2</p>
-                    <p id="next-cuando"></p>
                   </div>
                 </div>
               </div>
@@ -2242,10 +2254,6 @@ html.con-letra.con-letra #fretboard-svg-wrap svg{min-width:0!important;width:100
 
           list.appendChild(row);
         });
-        if (document.documentElement.classList.contains('full')) {
-          const act = list.children[state.sectionIndex];
-          if (act) list.scrollLeft = act.offsetLeft - 60;
-        }
       }
 
       // Ejercicios de la app que preparan cada parte (los nombres son los de las lecciones)
@@ -2416,7 +2424,6 @@ html.con-letra.con-letra #fretboard-svg-wrap svg{min-width:0!important;width:100
         const activeChordIdx = (!isTabActive()) ? Math.min(state.measureIdx, measures.length - 1) : 0;
         const curBeatInt = Math.floor(state.step16 / 4);
 
-        let tarjetaActiva = null;
         bloques.forEach((bloque) => {
         const lista = medidasDe(song.sections[bloque.i], false);
         if (enCola) {
@@ -2447,7 +2454,7 @@ html.con-letra.con-letra #fretboard-svg-wrap svg{min-width:0!important;width:100
             <div class="font-serif text-lg font-bold truncate">${display}</div>
             <div class="font-mono text-[10px] text-muted truncate">${m.strum || ''}</div>
           `;
-          if (isActive) tarjetaActiva = card;
+          if (isActive && state.isPlaying) requestAnimationFrame(() => seguir(card));
           card.addEventListener('click', () => {
             if (enCola && bloque.k !== state.colaPos) { const p = state.isPlaying; stopPlayback(false); cargarTramo(bloque.k); jumpToChordMeasure(idx); if (p) startPlayback(); return; }
             if (sec.type === 'hybrid') state.hybridPlayTarget = 'chords';
@@ -2472,34 +2479,6 @@ html.con-letra.con-letra #fretboard-svg-wrap svg{min-width:0!important;width:100
         document.getElementById('next-chord-svg').innerHTML = renderChordSVG(nextV, 'medium');
         document.getElementById('next-chord-name').textContent = song.chords[nextM.chord]?.display || nextM.chord;
         document.getElementById('next-chord-formula').textContent = nextV?.formula || '';
-
-        // La línea de tiempo avanza sola: el compás actual queda cerca del borde izquierdo
-        if (tarjetaActiva) {
-          if (document.documentElement.classList.contains('full') && window.innerWidth >= 700) timeline.scrollLeft = tarjetaActiva.offsetLeft - 8 - tarjetaActiva.offsetWidth / 2;
-          else if (state.isPlaying) requestAnimationFrame(() => seguir(tarjetaActiva));
-        }
-
-        const sonando = state.isPlaying && !state.isCountingIn && !isTabActive();
-        const quedan = (curM.beats || 4) - (sonando ? curBeatInt : 0);
-        const tiempos = quedan + (quedan === 1 ? ' tiempo' : ' tiempos');
-        document.getElementById('next-cuando').textContent = nextM.chord === curM.chord
-          ? 'Sigue el mismo acorde'
-          : sonando ? 'Cambia en ' + tiempos : 'Entra después de ' + tiempos;
-        const golpes = (curM.strum || '↓').trim().split(/\s+/);
-        const caja = document.getElementById('cur-golpes');
-        caja.style.setProperty('--por-fila', golpes.length > 8 ? Math.ceil(golpes.length / 2) : golpes.length);
-        caja.innerHTML = golpes.map(g => `<span>${g}</span>`).join('');
-        pintarGolpe(curM);
-      }
-
-      // Marca en el rasgueo el golpe que va sonando
-      function pintarGolpe(m) {
-        const marcas = document.getElementById('cur-golpes').children;
-        if (!m || !marcas.length) return;
-        const total = (m.beats || 4) * 4;
-        const cada = total % marcas.length === 0 ? total / marcas.length : total;
-        const k = state.isPlaying && !state.isCountingIn ? Math.floor(state.step16 / cada) : -1;
-        [...marcas].forEach((el, i) => el.classList.toggle('actual', i === k));
       }
 
       function renderCoach() {
@@ -2556,11 +2535,6 @@ html.con-letra.con-letra #fretboard-svg-wrap svg{min-width:0!important;width:100
         }
         if (acordesEnCola()) chordWs.classList.remove('hidden');
         tabWs.parentElement.classList.toggle('dos', !tabWs.classList.contains('hidden') && !chordWs.classList.contains('hidden'));
-        // En pantalla completa se muestra solo lo que se está tocando
-        tabWs.parentElement.classList.toggle('ver-tab', isTabActive());
-        const vista = document.getElementById('btn-vista');
-        vista.hidden = sec.type !== 'hybrid';
-        vista.textContent = isTabActive() ? 'Ver acordes' : 'Ver tablatura';
       }
 
       function renderMasterBeats() {
@@ -2910,7 +2884,7 @@ html.con-letra.con-letra #fretboard-svg-wrap svg{min-width:0!important;width:100
           if (isQuarterBeat) {
             renderChordWorkspace();
             renderCoach();
-          } else pintarGolpe(m);
+          }
         }
 
         if (isQuarterBeat) {
@@ -3207,52 +3181,54 @@ html.con-letra.con-letra #fretboard-svg-wrap svg{min-width:0!important;width:100
       /* ---------------------------------------------------------------------
          9. EVENT LISTENERS & BOOTSTRAP
          --------------------------------------------------------------------- */
-      // Qué secciones están ocultas: se recuerda en este aparato
-      const SECCIONES = { partes: 'Partes', orden: 'Orden de la canción', proximo: 'Próximo acorde', linea: 'Línea de tiempo', mastil: 'Mástil', bucle: 'Bucle', consejo: 'Consejo' };
+      // Qué se ve en pantalla completa: se recuerda en este aparato
+      const SECCIONES = { bloques: 'Bloques de estudio', explicacion: 'Descripción y ejercicios', opciones: 'Velocidades y opciones', orden: 'Orden de la canción', pestanas: 'Pestañas de arriba', consejo: 'Consejo', linea: 'Línea de tiempo', acordes: 'Acorde actual y próximo', mastil: 'Mástil', bucle: 'Bucle' };
+      const PARA_ENSAYAR = ['bloques', 'explicacion', 'opciones', 'pestanas', 'consejo'];
       function iniciarSecciones() {
         let ocultas = [];
-        try { ocultas = JSON.parse(localStorage.getItem('guitarlab_vista')) || []; } catch (e) { /* se parte con todo a la vista */ }
-        const panel = document.getElementById('panel-secciones');
-        Object.entries(SECCIONES).forEach(([id, nombre]) => {
+        try { const g = JSON.parse(localStorage.getItem('guitarlab_vista')); if (Array.isArray(g)) ocultas = g; } catch (e) { /* se parte con todo a la vista */ }
+        const panel = document.getElementById('panel-secciones'), boton = document.getElementById('btn-secciones');
+        const crea = (texto, accion, clase) => {
           const b = document.createElement('button');
           b.type = 'button';
-          b.dataset.sec = id;
-          b.textContent = nombre;
-          const pinta = () => {
-            const oculta = ocultas.includes(id);
-            document.documentElement.classList.toggle('sin-' + id, oculta);
-            b.setAttribute('aria-pressed', String(!oculta));
-          };
-          b.addEventListener('click', () => {
-            ocultas = ocultas.includes(id) ? ocultas.filter(x => x !== id) : [...ocultas, id];
-            try { localStorage.setItem('guitarlab_vista', JSON.stringify(ocultas)); } catch (e) { /* queda solo por esta vez */ }
-            pinta();
-            renderAllPracticeViews();
-          });
-          pinta();
+          b.textContent = texto;
+          if (clase) b.className = clase;
+          b.addEventListener('click', accion);
           panel.appendChild(b);
+          return b;
+        };
+        const nota = document.createElement('p');
+        nota.textContent = 'Toca para ocultar o volver a mostrar.';
+        panel.appendChild(nota);
+        const chips = {};
+        const pinta = () => Object.keys(SECCIONES).forEach(id => {
+          const oculta = ocultas.includes(id);
+          document.documentElement.classList.toggle('sin-' + id, oculta);
+          chips[id].setAttribute('aria-pressed', String(!oculta));
         });
-      }
-
-      function iniciarPaneles() {
-        const raiz = document.documentElement;
-        const botones = { 'con-opciones': document.getElementById('btn-opciones'), 'con-explica': document.getElementById('btn-explica'), 'con-secciones': document.getElementById('btn-secciones') };
-        iniciarSecciones();
-        Object.entries(botones).forEach(([clase, boton]) => boton.addEventListener('click', () => {
-          const abrir = !raiz.classList.contains(clase);
-          Object.entries(botones).forEach(([c, b]) => { raiz.classList.toggle(c, abrir && c === clase); b.setAttribute('aria-pressed', String(abrir && c === clase)); });
-        }));
-        document.getElementById('btn-vista').addEventListener('click', () => {
-          stopPlayback(false);
-          state.hybridPlayTarget = isTabActive() ? 'chords' : 'tab';
-          state.measureIdx = isTabActive() ? state.loopStart : 0;
-          state.step16 = 0;
-          renderAllPracticeViews();
+        const deja = lista => {
+          ocultas = lista;
+          try { localStorage.setItem('guitarlab_vista', JSON.stringify(ocultas)); } catch (e) { /* queda solo por esta vez */ }
+          pinta();
+        };
+        Object.entries(SECCIONES).forEach(([id, nombre]) => {
+          chips[id] = crea(nombre, () => deja(ocultas.includes(id) ? ocultas.filter(x => x !== id) : [...ocultas, id]));
+          chips[id].dataset.sec = id;
         });
+        crea('Modo ensayo', () => deja([...PARA_ENSAYAR]), 'rapido').dataset.rapido = 'ensayo';
+        crea('Mostrar todo', () => deja([]), 'rapido').dataset.rapido = 'todo';
+        pinta();
+        const abre = abrir => {
+          if (abrir) panel.style.setProperty('--panel-arriba', (boton.getBoundingClientRect().bottom + 6) + 'px');
+          panel.hidden = !abrir;
+          boton.setAttribute('aria-expanded', String(abrir));
+        };
+        boton.addEventListener('click', () => abre(panel.hidden));
+        document.addEventListener('click', e => { if (!panel.hidden && !panel.contains(e.target) && !boton.contains(e.target)) abre(false); });
       }
 
       function init() {
-        iniciarPaneles();
+        iniciarSecciones();
         // Dentro de Guitarra Diaria: usa el tema de la app y oculta el botón propio
         const temaApp = new URLSearchParams(location.search).get('theme');
         if (temaApp === 'dark' || temaApp === 'light') {
