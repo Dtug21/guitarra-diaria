@@ -1,5 +1,5 @@
 // Guarda la app para que abra sin internet. Sube VERSION cuando cambies archivos.
-const VERSION = 'gd-v19', FONTS = 'gd-fonts', SONIDOS = 'gd-sonidos';
+const VERSION = 'gd-v20', FONTS = 'gd-fonts', SONIDOS = 'gd-sonidos';
 const FILES = ['./', './index.html', './studio.html', './guitarra.js', './sonidos/indice.js', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(FILES.map(f => new Request(f, { cache: 'reload' })))).then(() => self.skipWaiting()));
@@ -26,7 +26,8 @@ self.addEventListener('fetch', e => {
   }
   // Red primero; si no hay internet o tarda más de 4 s, la copia guardada (ignorando ?theme=…)
   const copia = () => caches.open(VERSION).then(c => c.match(req, { ignoreSearch: true }).then(r => r || (req.mode === 'navigate' ? c.match('./index.html') : undefined)));
-  const red = fetch(req).then(r => { if (r.ok && !url.search) e.waitUntil(guardar(VERSION, req, r)); return r; });
+  // «no-cache»: siempre se pregunta al servidor si hay algo nuevo; si no, el navegador usaba la copia hasta 10 minutos
+  const red = fetch(req, { cache: 'no-cache' }).then(r => { if (r.ok && !url.search) e.waitUntil(guardar(VERSION, req, r)); return r; });
   const lenta = new Promise(ok => setTimeout(ok, 4000)).then(copia).then(r => r || red);
   e.respondWith(Promise.race([red, lenta]).catch(() => copia().then(r => r || Response.error())));
 });

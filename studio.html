@@ -474,6 +474,7 @@ html.con-letra.con-letra #fretboard-svg-wrap svg{min-width:0!important;width:100
           <div class="flex items-center gap-2">
             <span class="font-mono text-[10px] uppercase tracking-widest text-accent font-semibold">GuitarLab Studio</span>
             <span id="header-tuning" class="font-mono text-[10px] px-1.5 py-0.5 rounded surface-elevated text-muted">EADGBE</span>
+            <span id="header-version" class="font-mono text-[10px] px-1.5 py-0.5 rounded surface-elevated text-muted" title="Versión de la app"></span>
             <span id="header-nivel" class="font-mono text-[10px] px-1.5 py-0.5 rounded surface-elevated text-muted" hidden></span>
           </div>
           <h1 id="header-song-title" class="font-serif text-base sm:text-lg font-semibold leading-tight truncate">
@@ -3443,6 +3444,7 @@ html.con-letra.con-letra #fretboard-svg-wrap svg{min-width:0!important;width:100
       }
 
       function init() {
+        document.getElementById('header-version').textContent = String(window.APP_VERSION || '').replace('gd-', '');
         iniciarSeguimiento();
         iniciarZoom();
         iniciarPartes();

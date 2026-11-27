@@ -397,6 +397,18 @@ function cargar(src){return new Promise(r=>{$app.onload=()=>{const w=$app.conten
   const faltan=[];for(const f of archivos){const r=await fetch(f,{cache:'no-store'});if(!r.ok)faltan.push(f)}
   ok('Todos los archivos para usar sin internet existen',faltan.length===0,faltan.join());
   ok('Los íconos del manifiesto están guardados',man.icons.every(i=>archivos.includes('./'+i.src)));
+  { const publicada=sw.match(/VERSION = '([^']+)'/)[1];
+    w=await cargar('index.html?t=version');await espera(400);
+    ok('La versión que se muestra es la misma que la publicada',w.APP_VERSION===publicada,w.APP_VERSION+' / '+publicada);
+    ok('La app pide siempre la copia más nueva',/fetch\(req, \{ cache: 'no-cache' \}\)/.test(sw));
+    const hay=await w.revisarVersion('gd-v0'),aviso=w.document.getElementById('aviso-version');
+    ok('Avisa cuando hay una versión nueva',hay&&!!aviso&&!!aviso.querySelector('#actualizar-app'),aviso&&aviso.textContent);
+    ok('Sin versión nueva no avisa',(await w.revisarVersion(publicada))===false&&!w.document.getElementById('aviso-version'));
+    w.eval("st.setup=true;view='prog';render()");await espera(300);
+    ok('Progreso muestra la versión',w.document.getElementById('version-app').textContent.includes(publicada.replace('gd-','')));
+    w=await cargar('studio.html?t=version');
+    ok('El estudio muestra la versión arriba',w.document.getElementById('header-version').textContent===publicada.replace('gd-',''));
+  }
   await espera(300);
   ok('Sin errores de JavaScript durante las pruebas',errores.length===0,[...new Set(errores)].slice(0,4).join(' | '));
 }catch(e){ok('Las pruebas terminaron',false,e.message+' '+(e.stack||'').split('\n')[1])}

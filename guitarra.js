@@ -3,6 +3,8 @@
    hasta el 20-21 y tres intensidades. Si una grabación no se puede cargar, usa una cuerda modelada. */
 (function (raiz) {
   'use strict';
+  // Número de versión que se muestra en la app. Debe ser igual a VERSION de sw.js
+  raiz.APP_VERSION = 'gd-v20';
 
   // Ruido repetible: la misma nota suena igual cada vez
   function azar(semilla) {
