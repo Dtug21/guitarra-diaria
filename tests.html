@@ -181,6 +181,19 @@ function cargar(src){return new Promise(r=>{$app.onload=()=>{const w=$app.conten
     ok('Muchacha video se reproduce sin errores',!falloSonido,falloSonido);d.getElementById('btn-play').click();
   }
 
+  // ---------- Durazno sangrando ----------
+  { sel.value='durazno-sangrando';sel.dispatchEvent(new w.Event('change'));await espera(300);d.getElementById('btn-open-json').click();await espera(150);const s=JSON.parse(d.getElementById('json-editor').value);d.getElementById('btn-close-json').click();
+    const ch=s.sections.flatMap(x=>x.chordMeasures||[]),tb=s.sections.flatMap(x=>x.tabMeasures||[]);
+    ok('Durazno: todos los acordes usados tienen diagrama',ch.every(m=>s.chords[m.chord]));
+    ok('Durazno: el rasgueo calza en cada compás',ch.every(m=>(m.beats*4)%m.strum.split(' ').length===0));
+    ok('Durazno: cada compás de tablatura queda completo',tb.every(m=>m.events.reduce((a,e)=>a+e.dur,0)===m.beats));
+    const largo=f=>{const [id,a,b]=Array.isArray(f)?f:[f],x=s.sections.find(y=>y.id===id);return (x.tabMeasures||x.chordMeasures).filter(m=>a===undefined||(m.num>=a&&m.num<=b)).reduce((n,m)=>n+m.beats,0)};
+    const seg=s.form.reduce((n,f)=>n+largo(f),0)*60/330;
+    ok('Durazno: la canción completa dura como la grabación (3:39)',Math.abs(seg-219)<5,seg.toFixed(1)+' s');
+    sel.value='durazno-sangrando';sel.dispatchEvent(new w.Event('change'));await espera(300);d.getElementById('btn-play').click();await espera(2500);
+    ok('Durazno se reproduce sin errores',!falloSonido,falloSonido);d.getElementById('btn-play').click();
+  }
+
   // ---------- Cantata según el libro ----------
   w=await cargar('studio.html?t=9');
   { const d=w.document,sel=d.getElementById('song-selector');sel.value='cantata-puentes-amarillos';sel.dispatchEvent(new w.Event('change'));await espera(300);
@@ -202,7 +215,7 @@ function cargar(src){return new Promise(r=>{$app.onload=()=>{const w=$app.conten
     const elegir=async id=>{sel.value=id;sel.dispatchEvent(new w.Event('change'));await espera(300)};
     const json=async()=>{d.getElementById('btn-open-json').click();await espera(150);const c=JSON.parse(d.getElementById('json-editor').value);d.getElementById('btn-close-json').click();return c};
     let mal=[];
-    for(const id of ['saturno-pablo-alboran','muchacha-ojos-de-papel','muchacha-ojos-de-papel-video','cantata-puentes-amarillos']){await elegir(id);const c=await json(),ids=c.sections.map(x=>x.id),usa=(c.form||[]).map(f=>Array.isArray(f)?f[0]:f);
+    for(const id of ['saturno-pablo-alboran','muchacha-ojos-de-papel','muchacha-ojos-de-papel-video','cantata-puentes-amarillos','durazno-sangrando']){await elegir(id);const c=await json(),ids=c.sections.map(x=>x.id),usa=(c.form||[]).map(f=>Array.isArray(f)?f[0]:f);
       if(usa.some(x=>!ids.includes(x))||ids.some(x=>!usa.includes(x)))mal.push(id)}
     ok('Cada canción completa usa todas sus partes',!mal.length,mal.join());
     await elegir('saturno-pablo-alboran');
