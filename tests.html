@@ -13,7 +13,7 @@ iframe{width:393px;height:759px;border:1px solid #555;border-radius:8px;display:
 <iframe id="app" title="App en prueba"></iframe>
 <script>
 // Guarda tus datos antes de probar y los devuelve al terminar
-const CLAVES=['gd1','gd1-notas','gd1-rescate','gd1-notas-rescate','guitarlab_state_v2','guitarlab_custom_songs_v2'];
+const CLAVES=['gd1','gd1-notas','gd1-rescate','gd1-notas-rescate','guitarlab_state_v2','guitarlab_custom_songs_v2','guitarlab_vista'];
 const RESPALDO='gd-pruebas-respaldo';
 function restaurar(){const r=localStorage.getItem(RESPALDO);if(r===null)return;const d=JSON.parse(r);CLAVES.forEach(k=>{if(d[k]===null)localStorage.removeItem(k);else localStorage.setItem(k,d[k])});localStorage.removeItem(RESPALDO)}
 restaurar(); // por si una corrida anterior se cortó
@@ -272,6 +272,41 @@ function cargar(src){return new Promise(r=>{$app.onload=()=>{const w=$app.conten
       ok('Pantalla completa '+an+'×'+al+': el mástil se ve entero y la tablatura debajo',m.height>80&&m.top>=caja.top&&m.bottom<=caja.bottom+1&&tb.top>=m.bottom&&tb.height>=160,[caja.top,caja.bottom,m.top,m.bottom,tb.top,tb.height].map(Math.round).join()) }
     [$app.style.width,$app.style.height]=antes; }
 
+  // ---------- orden de práctica en pantalla completa ----------
+  { const antes=[$app.style.width,$app.style.height];
+    const vistaAntes=localStorage.getItem('guitarlab_vista');localStorage.removeItem('guitarlab_vista');
+    for(const [an,al] of [[1480,924],[924,1480]]){ $app.style.width=an+'px';$app.style.height=al+'px';
+      w=await cargar('studio.html?full=1&orden='+an);const d=w.document,sel=d.getElementById('song-selector'),r=e=>(typeof e==='string'?d.querySelector(e):e).getBoundingClientRect(),nom='Orden '+an+'×'+al+': ';
+      const visto=e=>!!d.querySelector(e).getClientRects().length;
+      sel.value='saturno-pablo-alboran';sel.dispatchEvent(new w.Event('change'));await espera(400);
+      const partes=r('.zona>aside'),mandos=r('.mandos'),cur=r('#cur-chord-svg'),prox=r('#next-chord-svg'),linea=r('#chord-timeline'),consejo=r('.consejo');
+      ok(nom+'partes, controles, acordes, línea de tiempo y consejo, en ese orden',partes.bottom<=mandos.top&&mandos.bottom<=cur.top&&cur.bottom<=linea.top&&linea.bottom<=consejo.top&&consejo.bottom<=w.innerHeight+1,[partes.bottom,mandos.top,mandos.bottom,cur.top,cur.bottom,linea.top,linea.bottom,consejo.top,consejo.bottom].map(Math.round).join());
+      ok(nom+'actual grande y próximo al lado',prox.left>cur.right&&cur.height>prox.height&&prox.top<cur.bottom,[cur.right,prox.left,cur.height,prox.height].map(Math.round).join());
+      ok(nom+'controles compactos y línea de tiempo en una fila',mandos.height<130&&linea.height<110,[mandos.height,linea.height].map(Math.round).join());
+      ok(nom+'la página no se desborda',d.documentElement.scrollWidth<=w.innerWidth+1&&d.querySelector('main').scrollHeight<=d.querySelector('main').clientHeight+1);
+      const cerrado=!visto('#sec-desc')&&!visto('#chk-metronome');d.getElementById('btn-opciones').click();const op=visto('#chk-metronome')&&visto('#btn-mode-orig')&&!visto('#sec-desc');
+      d.getElementById('btn-explica').click();const ex=visto('#sec-desc')&&!visto('#chk-metronome');d.getElementById('btn-explica').click();
+      ok(nom+'opciones y explicación aparecen solo al pedirlas',cerrado&&op&&ex&&!visto('#sec-desc'));
+      d.getElementById('chk-countin').click();d.getElementById('btn-play').click();await espera(700);
+      ok(nom+'marca el golpe del rasgueo y cuenta el cambio',!!d.querySelector('#cur-golpes span.actual')&&/Cambia en|mismo/.test(d.getElementById('next-cuando').textContent),d.getElementById('next-cuando').textContent);
+      d.getElementById('btn-play').click();d.getElementById('chk-countin').click();
+      const chip=id=>d.querySelector('#panel-secciones [data-sec="'+id+'"]'),alto=r('#chords-workspace').height;
+      d.getElementById('btn-secciones').click();['partes','linea','proximo','consejo'].forEach(id=>chip(id).click());d.getElementById('btn-secciones').click();await espera(200);
+      ok(nom+'las secciones se ocultan y el centro crece',!visto('.zona>aside')&&!visto('#chord-timeline')&&!visto('#next-chord-svg')&&!visto('.consejo')&&!visto('#panel-secciones')&&r('#chords-workspace').height>alto+100,[alto,r('#chords-workspace').height].map(Math.round).join());
+      w=await cargar('studio.html?full=1&recuerda='+an);
+      ok(nom+'recuerda lo oculto',!w.document.querySelector('.zona>aside').getClientRects().length);
+      w.document.getElementById('btn-secciones').click();w.document.querySelectorAll('#panel-secciones [aria-pressed="false"]').forEach(b=>b.click());w.document.getElementById('btn-secciones').click();
+      ok(nom+'y se vuelven a mostrar',!!w.document.querySelector('.zona>aside').getClientRects().length&&!!w.document.querySelector('.consejo').getClientRects().length);
+      w=await cargar('studio.html?full=1&orden2='+an);
+      { const d=w.document,sel=d.getElementById('song-selector'),visto=e=>!!d.querySelector(e).getClientRects().length;
+      sel.value='durazno-sangrando';sel.dispatchEvent(new w.Event('change'));await espera(300);d.getElementById('btn-completa').click();await espera(500);
+      ok(nom+'con partes juntas se ve solo lo que se toca',visto('#tab-workspace')&&!visto('#chords-workspace'));
+      d.querySelectorAll('#cola-info .paso')[1].click();await espera(400);
+      ok(nom+'al pasar a los acordes cambia la vista',visto('#chords-workspace')&&!visto('#tab-workspace')); }
+    }
+    if(vistaAntes===null)localStorage.removeItem('guitarlab_vista');else localStorage.setItem('guitarlab_vista',vistaAntes);
+    [$app.style.width,$app.style.height]=antes; }
+
   // ---------- Barro tal vez, letra y acordes ----------
   { w=await cargar('studio.html?letra=1');await espera(600);const d=w.document,sel=d.getElementById('song-selector');sel.value='barro-tal-vez';sel.dispatchEvent(new w.Event('change'));await espera(300);
     d.getElementById('btn-open-json').click();await espera(150);const s=JSON.parse(d.getElementById('json-editor').value);d.getElementById('btn-close-json').click();
@@ -295,7 +330,6 @@ function cargar(src){return new Promise(r=>{$app.onload=()=>{const w=$app.conten
     bl.click();ok('Letra: se cierra',panel.hidden&&!d.documentElement.classList.contains('con-letra'));
     if(antes===null)w.localStorage.removeItem('guitarlab_letras');else w.localStorage.setItem('guitarlab_letras',antes);
     const cw=d.getElementById('chords-workspace');
-    ok('Acordes debajo de la línea de tiempo',w.getComputedStyle(cw.lastElementChild).order==='0');
   }
 
   // ---------- Puente ----------
