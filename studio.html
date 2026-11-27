@@ -317,7 +317,7 @@ html.full #btn-salir{display:inline-flex}
  html.full #chords-workspace:not(.hidden),html.full #tab-workspace:not(.hidden){flex:1;overflow:auto}
 }
 /* Acorde actual y próximo en una columna a la derecha de la línea de tiempo */
-#btn-secciones,#panel-secciones{display:none}
+#btn-secciones,#panel-secciones,#btn-partes,#zoom{display:none}
 @media (min-width:700px){
  html.full #chords-workspace:not(.hidden){display:grid;grid-template-columns:minmax(0,1fr) clamp(230px,23vw,320px);grid-template-rows:minmax(0,1fr);gap:8px}
  html.full #chords-workspace>:first-child{grid-column:1;grid-row:1;min-height:0;overflow:auto}
@@ -373,6 +373,24 @@ html.full #btn-salir{display:inline-flex}
 @media (min-width:700px) and (orientation:portrait){
  html.full:not(.sin-linea) .derecha:not(.dos) #cur-chord-svg svg{height:min(15vh,230px)}
  html.full:not(.sin-linea) .derecha:not(.dos) #next-chord-svg svg{height:min(10vh,150px)}
+}
+/* Con los bloques ocultos, «＋ Partes» los abre un momento por encima para juntar estrofas */
+@media (min-width:700px){
+ html.full.sin-bloques #btn-partes{display:inline-block}
+ html.full.sin-bloques #btn-partes[aria-expanded="true"]{background:var(--accent);border-color:var(--accent);color:#141413}
+ html.full.sin-bloques.ver-partes .zona>aside.card{display:flex!important;flex-direction:column;gap:8px;position:fixed;z-index:55;left:10px;top:var(--panel-arriba,60px);bottom:10px;width:min(380px,92vw);overflow:auto;padding:12px;box-shadow:0 12px 30px rgba(0,0,0,.45);border:1px solid var(--accent)}
+ html.full.sin-bloques.ver-partes .zona>aside>*{flex:none;margin:0}
+ html.full.sin-bloques.ver-partes .zona>aside>:first-child{display:flex}
+ html.full.sin-bloques.ver-partes .zona>aside #section-list{display:block;overflow:visible;max-height:none}
+ html.full.sin-bloques.ver-partes .zona>aside #section-list>*{margin-bottom:6px}
+}
+/* Zoom: acerca o aleja la zona de estudio; la barra de arriba no cambia */
+@media (min-width:700px){
+ html.full body>main{zoom:var(--zoom,1)}
+ html.full #zoom{display:inline-flex;align-items:center;border:1px solid var(--border-strong);border-radius:12px;overflow:hidden}
+ #zoom button{padding:7px 12px;font-size:15px;font-weight:700;cursor:pointer;color:inherit}
+ #zoom #zoom-valor{font-size:11px;min-width:52px;padding-left:4px;padding-right:4px;font-variant-numeric:tabular-nums}
+ #zoom button:disabled{opacity:.35;cursor:default}
 }
 /* Letra: se abre solo cuando se pide; la escribe o pega la persona y queda en este aparato */
 :root{--letra-ancho:min(320px,28vw);--letra-alto:34vh}
@@ -447,6 +465,14 @@ html.con-letra.con-letra #fretboard-svg-wrap svg{min-width:0!important;width:100
         </button>
 
         <button id="btn-letra" type="button" aria-pressed="false" aria-controls="letra-panel" class="px-3 py-2 rounded-xl text-xs font-semibold surface-elevated hover:border-[var(--accent)] cursor-pointer">📝 Letra</button>
+
+        <div id="zoom" role="group" aria-label="Zoom">
+          <button id="zoom-menos" type="button" aria-label="Alejar">−</button>
+          <button id="zoom-valor" type="button" title="Volver a 100%">100%</button>
+          <button id="zoom-mas" type="button" aria-label="Acercar">＋</button>
+        </div>
+
+        <button id="btn-partes" type="button" aria-expanded="false" class="px-3 py-2 rounded-xl text-xs font-semibold surface-elevated hover:border-[var(--accent)] cursor-pointer">＋ Partes</button>
 
         <button id="btn-secciones" type="button" aria-expanded="false" aria-controls="panel-secciones" class="px-3 py-2 rounded-xl text-xs font-semibold surface-elevated hover:border-[var(--accent)] cursor-pointer">▦ Secciones</button>
 
@@ -3227,7 +3253,41 @@ html.con-letra.con-letra #fretboard-svg-wrap svg{min-width:0!important;width:100
         document.addEventListener('click', e => { if (!panel.hidden && !panel.contains(e.target) && !boton.contains(e.target)) abre(false); });
       }
 
+      function iniciarPartes() {
+        const raiz = document.documentElement, boton = document.getElementById('btn-partes'), caja = document.querySelector('.zona>aside');
+        const abre = abrir => {
+          if (abrir) raiz.style.setProperty('--panel-arriba', (boton.getBoundingClientRect().bottom + 6) + 'px');
+          raiz.classList.toggle('ver-partes', abrir);
+          boton.setAttribute('aria-expanded', String(abrir));
+          boton.textContent = abrir ? '✓ Listo' : '＋ Partes';
+        };
+        boton.addEventListener('click', () => abre(!raiz.classList.contains('ver-partes')));
+        // Se revisa antes de que la lista se vuelva a dibujar, para no cerrarla al sumar una parte
+        document.addEventListener('click', e => { if (raiz.classList.contains('ver-partes') && !caja.contains(e.target) && !boton.contains(e.target)) abre(false); }, true);
+      }
+
+      function iniciarZoom() {
+        const MIN = 60, MAX = 160, PASO = 10;
+        let z = 100;
+        try { const g = Number(localStorage.getItem('guitarlab_zoom')); if (g >= MIN && g <= MAX) z = g; } catch (e) { /* tamaño normal */ }
+        const menos = document.getElementById('zoom-menos'), mas = document.getElementById('zoom-mas'), valor = document.getElementById('zoom-valor');
+        const pon = n => {
+          z = Math.min(MAX, Math.max(MIN, n));
+          document.documentElement.style.setProperty('--zoom', z / 100);
+          valor.textContent = z + '%';
+          menos.disabled = z === MIN;
+          mas.disabled = z === MAX;
+        };
+        const cambia = n => { pon(n); try { localStorage.setItem('guitarlab_zoom', String(z)); } catch (e) { /* queda solo por esta vez */ } };
+        menos.addEventListener('click', () => cambia(z - PASO));
+        mas.addEventListener('click', () => cambia(z + PASO));
+        valor.addEventListener('click', () => cambia(100));
+        pon(z);
+      }
+
       function init() {
+        iniciarZoom();
+        iniciarPartes();
         iniciarSecciones();
         // Dentro de Guitarra Diaria: usa el tema de la app y oculta el botón propio
         const temaApp = new URLSearchParams(location.search).get('theme');

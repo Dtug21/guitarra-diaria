@@ -13,7 +13,7 @@ iframe{width:393px;height:759px;border:1px solid #555;border-radius:8px;display:
 <iframe id="app" title="App en prueba"></iframe>
 <script>
 // Guarda tus datos antes de probar y los devuelve al terminar
-const CLAVES=['gd1','gd1-notas','gd1-rescate','gd1-notas-rescate','guitarlab_state_v2','guitarlab_custom_songs_v2','guitarlab_vista'];
+const CLAVES=['gd1','gd1-notas','gd1-rescate','gd1-notas-rescate','guitarlab_state_v2','guitarlab_custom_songs_v2','guitarlab_vista','guitarlab_zoom'];
 const RESPALDO='gd-pruebas-respaldo';
 function restaurar(){const r=localStorage.getItem(RESPALDO);if(r===null)return;const d=JSON.parse(r);CLAVES.forEach(k=>{if(d[k]===null)localStorage.removeItem(k);else localStorage.setItem(k,d[k])});localStorage.removeItem(RESPALDO)}
 restaurar(); // por si una corrida anterior se cortó
@@ -284,15 +284,41 @@ function cargar(src){return new Promise(r=>{$app.onload=()=>{const w=$app.conten
       d.getElementById('btn-secciones').click();d.querySelector('[data-rapido="ensayo"]').click();d.getElementById('btn-secciones').click();await espera(200);
       const c2=r('#chords-workspace');
       ok(nom+'modo ensayo oculta lo extra y el centro crece',!['.zona>aside','#sec-desc','#chk-metronome','.consejo'].some(visto)&&visto('#btn-play')&&visto('#speed-slider')&&visto('#cur-chord-svg')&&(c2.width>ancho+50||c2.height>alto+50),[ancho,c2.width,alto,c2.height].map(Math.round).join());
+      d.getElementById('btn-partes').click();await espera(100);
+      ok(nom+'en modo ensayo «＋ Partes» abre los bloques',visto('.zona>aside')&&visto('#btn-completa')&&r('.zona>aside').height>400);
+      d.querySelectorAll('#section-list .sec-mas')[1].click();await espera(150);d.querySelectorAll('#section-list .sec-mas')[2].click();await espera(150);
+      ok(nom+'permite sumar varias estrofas sin cerrarse',visto('.zona>aside')&&d.querySelectorAll('#cola-info .paso').length===3,d.querySelectorAll('#cola-info .paso').length);
+      d.getElementById('btn-partes').click();
+      ok(nom+'«Listo» los vuelve a ocultar',!visto('.zona>aside'));
+      d.getElementById('btn-partes').click();d.getElementById('speed-slider').click();
+      ok(nom+'tocar fuera también los cierra',!visto('.zona>aside'));
       w=await cargar('studio.html?full=1&recuerda='+an);d=w.document;
       ok(nom+'recuerda lo oculto',!visto('.zona>aside'));
       d.getElementById('btn-secciones').click();d.querySelector('[data-sec="bloques"]').click();
-      ok(nom+'cada parte vuelve por separado',visto('.zona>aside')&&!visto('.consejo'));
+      ok(nom+'cada parte vuelve por separado',visto('.zona>aside')&&!visto('.consejo')&&!visto('#btn-partes'));
       d.querySelector('[data-rapido="todo"]').click();
       ok(nom+'«Mostrar todo» devuelve todo',['.zona>aside','#sec-desc','#chk-metronome','.consejo'].every(visto));
       ok(nom+'la página no se desborda',d.documentElement.scrollWidth<=w.innerWidth+1);
     }
     if(vistaAntes===null)localStorage.removeItem('guitarlab_vista');else localStorage.setItem('guitarlab_vista',vistaAntes);
+    [$app.style.width,$app.style.height]=antes; }
+
+  // ---------- zoom ----------
+  { const antes=[$app.style.width,$app.style.height],zAntes=localStorage.getItem('guitarlab_zoom'),vAntes=localStorage.getItem('guitarlab_vista');localStorage.removeItem('guitarlab_vista');
+    for(const [an,al] of [[1480,924],[924,1480]]){ $app.style.width=an+'px';$app.style.height=al+'px';localStorage.removeItem('guitarlab_zoom');
+      w=await cargar('studio.html?full=1&zoom='+an);let d=w.document;const nom='Zoom '+an+'×'+al+': ',ancho=()=>d.querySelector('#cur-chord-name').getBoundingClientRect().height,t=id=>d.getElementById(id);
+      const sel=t('song-selector');sel.value='saturno-pablo-alboran';sel.dispatchEvent(new w.Event('change'));await espera(400);
+      const normal=ancho(),sale=()=>{const m=d.querySelector('main').getBoundingClientRect();return m.bottom<=w.innerHeight+1&&m.right<=w.innerWidth+1&&d.documentElement.scrollWidth<=w.innerWidth+1};
+      t('zoom-mas').click();t('zoom-mas').click();t('zoom-mas').click();await espera(200);
+      ok(nom+'acercar agranda y no se sale de la pantalla',t('zoom-valor').textContent==='130%'&&ancho()>normal*1.15&&sale(),[normal,ancho()].map(Math.round).join());
+      for(let i=0;i<9;i++)t('zoom-menos').click();await espera(200);
+      ok(nom+'alejar achica y tiene tope',t('zoom-valor').textContent==='60%'&&ancho()<normal*.8&&t('zoom-menos').disabled&&sale(),[normal,ancho()].map(Math.round).join());
+      w=await cargar('studio.html?full=1&zoom2='+an);d=w.document;
+      ok(nom+'se recuerda',d.getElementById('zoom-valor').textContent==='60%');
+      d.getElementById('zoom-valor').click();
+      ok(nom+'el número vuelve a 100%',d.getElementById('zoom-valor').textContent==='100%');
+    }
+    for(const [k,v] of [['guitarlab_zoom',zAntes],['guitarlab_vista',vAntes]])v===null?localStorage.removeItem(k):localStorage.setItem(k,v);
     [$app.style.width,$app.style.height]=antes; }
 
   // ---------- Barro tal vez, letra y acordes ----------
