@@ -169,6 +169,8 @@ function cargar(src){return new Promise(r=>{$app.onload=()=>{const w=$app.conten
   { const nombres=[...sel.options].map(o=>o.textContent),ids=[...sel.options].map(o=>o.value);
     ok('La plantilla queda al final de la lista',ids[ids.length-1]==='plantilla-base-vacia',ids.join());
     const resto=nombres.slice(0,-1);ok('Las canciones van ordenadas por nombre',resto.join('|')===[...resto].sort((a,b)=>a.localeCompare(b,'es')).join('|'),resto.join(' | '));
+    const marca=d.getElementById('header-nivel'),niv=id=>{sel.value=id;sel.dispatchEvent(new w.Event('change'));return marca.hidden?'':marca.textContent};
+    ok('Cada canción muestra su dificultad',ids.slice(0,-1).every(id=>/^Dificultad [●○]{5} /.test(niv(id)))&&resto.every(n=>/ — [1-5]\/5$/.test(n))&&niv('plantilla-base-vacia')===''&&niv('saturno-pablo-alboran').endsWith('●●○○○ Fácil'),resto.join(' | '));
     const lee=async id=>{sel.value=id;sel.dispatchEvent(new w.Event('change'));await espera(300);d.getElementById('btn-open-json').click();await espera(150);const c=JSON.parse(d.getElementById('json-editor').value);d.getElementById('btn-close-json').click();return c};
     const lib=await lee('muchacha-ojos-de-papel'),vid=await lee('muchacha-ojos-de-papel-video'),base={6:40,5:45,4:50,3:55,2:59,1:64};
     const midi=m=>m.events.map(e=>e.notes.map(n=>base[n.s]+n.f).sort((a,b)=>a-b).join('+')).join(' ');
@@ -215,7 +217,7 @@ function cargar(src){return new Promise(r=>{$app.onload=()=>{const w=$app.conten
     const elegir=async id=>{sel.value=id;sel.dispatchEvent(new w.Event('change'));await espera(300)};
     const json=async()=>{d.getElementById('btn-open-json').click();await espera(150);const c=JSON.parse(d.getElementById('json-editor').value);d.getElementById('btn-close-json').click();return c};
     let mal=[];
-    for(const id of ['saturno-pablo-alboran','muchacha-ojos-de-papel','muchacha-ojos-de-papel-video','cantata-puentes-amarillos','durazno-sangrando','durazno-sangrando-dam','barro-tal-vez']){await elegir(id);const c=await json(),ids=c.sections.map(x=>x.id),usa=(c.form||[]).map(f=>Array.isArray(f)?f[0]:f);
+    for(const id of ['saturno-pablo-alboran','muchacha-ojos-de-papel','muchacha-ojos-de-papel-video','cantata-puentes-amarillos','durazno-sangrando','durazno-sangrando-dam','barro-tal-vez','puente-cerati']){await elegir(id);const c=await json(),ids=c.sections.map(x=>x.id),usa=(c.form||[]).map(f=>Array.isArray(f)?f[0]:f);
       if(usa.some(x=>!ids.includes(x))||ids.some(x=>!usa.includes(x)))mal.push(id)}
     ok('Cada canción completa usa todas sus partes',!mal.length,mal.join());
     await elegir('saturno-pablo-alboran');
@@ -294,6 +296,18 @@ function cargar(src){return new Promise(r=>{$app.onload=()=>{const w=$app.conten
     if(antes===null)w.localStorage.removeItem('guitarlab_letras');else w.localStorage.setItem('guitarlab_letras',antes);
     const cw=d.getElementById('chords-workspace');
     ok('Acordes debajo de la línea de tiempo',w.getComputedStyle(cw.lastElementChild).order==='0');
+  }
+
+  // ---------- Puente ----------
+  { w=await cargar('studio.html?puente=1');await espera(600);const d=w.document,sel=d.getElementById('song-selector');sel.value='puente-cerati';sel.dispatchEvent(new w.Event('change'));await espera(300);
+    d.getElementById('btn-open-json').click();await espera(150);const s=JSON.parse(d.getElementById('json-editor').value);d.getElementById('btn-close-json').click();
+    let seg=0;for(const e of s.form){const [id,a,b]=Array.isArray(e)?e:[e],x=s.sections.find(y=>y.id===id);seg+=(x.tabMeasures||x.chordMeasures.filter(m=>a===undefined||(m.num>=a&&m.num<=b))).reduce((n,m)=>n+m.beats,0)*60/x.baseBpm}
+    ok('Puente: completa, dura como la grabación (4:02)',Math.abs(seg-242)<5,seg.toFixed(1));
+    ok('Puente: compases y rasgueos completos',s.sections.every(x=>(x.tabMeasures||[]).every(m=>m.events.reduce((n,e)=>n+e.dur,0)===m.beats)&&(x.chordMeasures||[]).every(m=>s.chords[m.chord]&&(m.beats*4)%m.strum.split(' ').length===0)));
+    ok('Puente: avisa el cejillo en el traste 3',/Cejillo en el traste 3/.test(d.getElementById('header-tuning').textContent));
+    d.getElementById('btn-play').click();await espera(900);d.getElementById('btn-play').click();
+    sel.value='barro-tal-vez';sel.dispatchEvent(new w.Event('change'));await espera(300);
+    ok('Puente: las otras canciones siguen sin cejillo',!/Cejillo/.test(d.getElementById('header-tuning').textContent));
   }
 
   // ---------- instalación ----------
