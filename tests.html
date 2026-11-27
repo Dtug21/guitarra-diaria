@@ -182,16 +182,16 @@ function cargar(src){return new Promise(r=>{$app.onload=()=>{const w=$app.conten
   }
 
   // ---------- Durazno sangrando ----------
-  { sel.value='durazno-sangrando';sel.dispatchEvent(new w.Event('change'));await espera(300);d.getElementById('btn-open-json').click();await espera(150);const s=JSON.parse(d.getElementById('json-editor').value);d.getElementById('btn-close-json').click();
+  for(const idD of ['durazno-sangrando','durazno-sangrando-dam']){ sel.value=idD;sel.dispatchEvent(new w.Event('change'));await espera(300);d.getElementById('btn-open-json').click();await espera(150);const nom=idD.endsWith('dam')?'Durazno D.A.M':'Durazno Ordonez',s=JSON.parse(d.getElementById('json-editor').value);d.getElementById('btn-close-json').click();
     const ch=s.sections.flatMap(x=>x.chordMeasures||[]),tb=s.sections.flatMap(x=>x.tabMeasures||[]);
-    ok('Durazno: todos los acordes usados tienen diagrama',ch.every(m=>s.chords[m.chord]));
-    ok('Durazno: el rasgueo calza en cada compás',ch.every(m=>(m.beats*4)%m.strum.split(' ').length===0));
-    ok('Durazno: cada compás de tablatura queda completo',tb.every(m=>m.events.reduce((a,e)=>a+e.dur,0)===m.beats));
+    ok(nom+': todos los acordes usados tienen diagrama',ch.every(m=>s.chords[m.chord]));
+    ok(nom+': el rasgueo calza en cada compás',ch.every(m=>(m.beats*4)%m.strum.split(' ').length===0));
+    ok(nom+': cada compás de tablatura queda completo',tb.every(m=>m.events.reduce((a,e)=>a+e.dur,0)===m.beats));
     const largo=f=>{const [id,a,b]=Array.isArray(f)?f:[f],x=s.sections.find(y=>y.id===id);return (x.tabMeasures||x.chordMeasures).filter(m=>a===undefined||(m.num>=a&&m.num<=b)).reduce((n,m)=>n+m.beats,0)};
     const seg=s.form.reduce((n,f)=>n+largo(f),0)*60/330;
-    ok('Durazno: la canción completa dura como la grabación (3:39)',Math.abs(seg-219)<5,seg.toFixed(1)+' s');
-    sel.value='durazno-sangrando';sel.dispatchEvent(new w.Event('change'));await espera(300);d.getElementById('btn-play').click();await espera(2500);
-    ok('Durazno se reproduce sin errores',!falloSonido,falloSonido);d.getElementById('btn-play').click();
+    ok(nom+': la canción completa dura como la grabación (3:39)',Math.abs(seg-219)<5,seg.toFixed(1)+' s');
+    d.getElementById('btn-play').click();await espera(2500);
+    ok(nom+' se reproduce sin errores',!falloSonido,falloSonido);d.getElementById('btn-play').click();
   }
 
   // ---------- Cantata según el libro ----------
@@ -215,7 +215,7 @@ function cargar(src){return new Promise(r=>{$app.onload=()=>{const w=$app.conten
     const elegir=async id=>{sel.value=id;sel.dispatchEvent(new w.Event('change'));await espera(300)};
     const json=async()=>{d.getElementById('btn-open-json').click();await espera(150);const c=JSON.parse(d.getElementById('json-editor').value);d.getElementById('btn-close-json').click();return c};
     let mal=[];
-    for(const id of ['saturno-pablo-alboran','muchacha-ojos-de-papel','muchacha-ojos-de-papel-video','cantata-puentes-amarillos','durazno-sangrando']){await elegir(id);const c=await json(),ids=c.sections.map(x=>x.id),usa=(c.form||[]).map(f=>Array.isArray(f)?f[0]:f);
+    for(const id of ['saturno-pablo-alboran','muchacha-ojos-de-papel','muchacha-ojos-de-papel-video','cantata-puentes-amarillos','durazno-sangrando','durazno-sangrando-dam','barro-tal-vez']){await elegir(id);const c=await json(),ids=c.sections.map(x=>x.id),usa=(c.form||[]).map(f=>Array.isArray(f)?f[0]:f);
       if(usa.some(x=>!ids.includes(x))||ids.some(x=>!usa.includes(x)))mal.push(id)}
     ok('Cada canción completa usa todas sus partes',!mal.length,mal.join());
     await elegir('saturno-pablo-alboran');
@@ -259,6 +259,42 @@ function cargar(src){return new Promise(r=>{$app.onload=()=>{const w=$app.conten
   ok('El estudio detallado ocupa toda la pantalla',rm.top===0&&rm.left===0&&Math.abs(rm.width-w.innerWidth)<2&&Math.abs(rm.height-w.innerHeight)<2,JSON.stringify(rm));
   marco.contentDocument.getElementById('btn-salir').click();await espera(500);
   ok('El botón Salir vuelve al repertorio',!w.document.querySelector('iframe.studio')&&w.eval('cTab')==='rep');
+
+  // ---------- mástil entero al juntar tablatura y acordes ----------
+  { const antes=[$app.style.width,$app.style.height];
+    for(const [an,al] of [[1480,924],[924,1480]]){ $app.style.width=an+'px';$app.style.height=al+'px';
+      w=await cargar('studio.html?full=1&t='+an);const d=w.document,sel=d.getElementById('song-selector');
+      sel.value='durazno-sangrando';sel.dispatchEvent(new w.Event('change'));await espera(300);
+      [...d.querySelectorAll('button')].find(b=>/Canción completa/.test(b.textContent)).click();await espera(600);
+      const caja=d.getElementById('tab-workspace').getBoundingClientRect(),m=d.querySelector('#fretboard-svg-wrap svg').getBoundingClientRect(),tb=d.querySelector('#tab-workspace>:nth-child(3)').getBoundingClientRect();
+      ok('Pantalla completa '+an+'×'+al+': el mástil se ve entero y la tablatura debajo',m.height>80&&m.top>=caja.top&&m.bottom<=caja.bottom+1&&tb.top>=m.bottom&&tb.height>=160,[caja.top,caja.bottom,m.top,m.bottom,tb.top,tb.height].map(Math.round).join()) }
+    [$app.style.width,$app.style.height]=antes; }
+
+  // ---------- Barro tal vez, letra y acordes ----------
+  { w=await cargar('studio.html?letra=1');await espera(600);const d=w.document,sel=d.getElementById('song-selector');sel.value='barro-tal-vez';sel.dispatchEvent(new w.Event('change'));await espera(300);
+    d.getElementById('btn-open-json').click();await espera(150);const s=JSON.parse(d.getElementById('json-editor').value);d.getElementById('btn-close-json').click();
+    const sec=id=>s.sections.find(x=>x.id===id);let n=0,seg=0;
+    for(const e of s.form){const [id,a,b]=Array.isArray(e)?e:[e],x=sec(id),l=x.tabMeasures||x.chordMeasures.filter(m=>m.num>=a&&m.num<=b);
+      n+=x.tabMeasures?l.length:new Set(l.map(m=>m.num)).size;seg+=l.reduce((t,m)=>t+m.beats,0)*60/x.baseBpm}
+    ok('Barro tal vez: completa, 63 compases',n===63,n);
+    ok('Barro tal vez: dura como la tablatura (186 s)',Math.abs(seg-185.9)<2,seg.toFixed(1));
+    ok('Barro tal vez: compases de tablatura completos',s.sections.every(x=>(x.tabMeasures||[]).every(m=>m.events.reduce((t,e)=>t+e.dur,0)===m.beats)));
+    ok('Barro tal vez: rasgueos y diagramas',s.sections.every(x=>(x.chordMeasures||[]).every(m=>s.chords[m.chord]&&(m.beats*4)%m.strum.split(' ').length===0)));
+    d.getElementById('btn-play').click();await espera(900);d.getElementById('btn-play').click();
+    const panel=d.getElementById('letra-panel'),bl=d.getElementById('btn-letra'),ed=d.getElementById('letra-editor');
+    const antes=w.localStorage.getItem('guitarlab_letras');
+    ok('Letra: parte cerrada',panel.hidden);
+    bl.click();ok('Letra: se abre al pedirla',!panel.hidden);
+    if(ed.hidden)d.getElementById('letra-editar').click();
+    ed.value='línea de prueba';ed.dispatchEvent(new w.Event('input'));d.getElementById('letra-editar').click();
+    ok('Letra: se guarda y se lee',d.getElementById('letra-texto').textContent==='línea de prueba'&&ed.hidden);
+    sel.value='saturno-pablo-alboran';sel.dispatchEvent(new w.Event('change'));await espera(300);
+    ok('Letra: cada canción tiene la suya',d.getElementById('letra-titulo').textContent.includes('Saturno')&&d.getElementById('letra-texto').textContent!=='línea de prueba');
+    bl.click();ok('Letra: se cierra',panel.hidden&&!d.documentElement.classList.contains('con-letra'));
+    if(antes===null)w.localStorage.removeItem('guitarlab_letras');else w.localStorage.setItem('guitarlab_letras',antes);
+    const cw=d.getElementById('chords-workspace');
+    ok('Acordes debajo de la línea de tiempo',w.getComputedStyle(cw.lastElementChild).order==='0');
+  }
 
   // ---------- instalación ----------
   const sw=await (await fetch('sw.js',{cache:'no-store'})).text(),man=await (await fetch('manifest.webmanifest',{cache:'no-store'})).json();
