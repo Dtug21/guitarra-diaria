@@ -160,10 +160,26 @@ function cargar(src){return new Promise(r=>{$app.onload=()=>{const w=$app.conten
   const moj=L.find(s=>s.id==='muchacha-ojos-de-papel'),notasM={G:[7,11,2],'D/F#':[2,6,9],Em:[4,7,11],'Am7 (G)':[9,0,4,7],D:[2,6,9],'Em/G':[4,7,11],Emmaj7:[4,7,11,3],Em7:[4,7,11,2],'Em/D':[2,4,7,11],'Em7/B':[4,7,11,2],'C#dim':[1,4,7],C:[0,4,7],'C/G':[0,4,7],Am7:[9,0,4,7],Bb:[10,2,5],Bbsus4:[10,3,5]};
   const malasM=Object.keys(notasM).filter(k=>moj.chords[k].orig.frets.some((f,i)=>f>=0&&!notasM[k].includes((abiertas[i]+f)%12)));
   const por=id=>{const x={};moj.m.forEach(y=>x[y.num]=(x[y.num]||0)+y.beats);return x};
-  ok('Muchacha: cada compás de las partes A y B suma 2 tiempos',Object.entries(por()).filter(([k])=>k>5&&k<=36).every(([,v])=>v===2));
+  ok('Muchacha: cada compás de las partes A y B suma 2 tiempos',Object.entries(por()).filter(([k])=>k>8&&k<=39).every(([,v])=>v===2));
   ok('Los diagramas de Muchacha tienen las notas de cada acorde',!malasM.length,malasM.join());
   sel.value='muchacha-ojos-de-papel';sel.dispatchEvent(new w.Event('change'));await espera(300);d.getElementById('btn-play').click();await espera(6000);
   ok('Muchacha (introducción en tablatura) se reproduce sin errores',!falloSonido,falloSonido);d.getElementById('btn-play').click();
+
+  // ---------- dos versiones de Muchacha y orden de la lista ----------
+  { const nombres=[...sel.options].map(o=>o.textContent),ids=[...sel.options].map(o=>o.value);
+    ok('La plantilla queda al final de la lista',ids[ids.length-1]==='plantilla-base-vacia',ids.join());
+    const resto=nombres.slice(0,-1);ok('Las canciones van ordenadas por nombre',resto.join('|')===[...resto].sort((a,b)=>a.localeCompare(b,'es')).join('|'),resto.join(' | '));
+    const lee=async id=>{sel.value=id;sel.dispatchEvent(new w.Event('change'));await espera(300);d.getElementById('btn-open-json').click();await espera(150);const c=JSON.parse(d.getElementById('json-editor').value);d.getElementById('btn-close-json').click();return c};
+    const lib=await lee('muchacha-ojos-de-papel'),vid=await lee('muchacha-ojos-de-papel-video'),base={6:40,5:45,4:50,3:55,2:59,1:64};
+    const midi=m=>m.events.map(e=>e.notes.map(n=>base[n.s]+n.f).sort((a,b)=>a-b).join('+')).join(' ');
+    const intro=lib.sections[0].tabMeasures,libroMidi=['50 52 59 50 51 59','50 59 48 55+59','48+52+55+59 47 45 43',null,'64 67 48 45 47 67','45 46 50 45+50'];
+    const dif=libroMidi.map((x,i)=>x&&midi(intro[i])!==x?(i+1)+': '+midi(intro[i]):null).filter(Boolean);
+    ok('Muchacha cancionero: la introducción tiene las notas de la partitura',intro.length===8&&!dif.length&&midi(intro[3]).split(' ').every(x=>x==='43+50+55+59+62+67'),dif.join(' | ')+' / '+midi(intro[3]));
+    ok('Muchacha cancionero: cada compás de la introducción suma 2 tiempos',intro.every(m=>m.beats===2&&m.events.reduce((s,e)=>s+e.dur,0)===2));
+    ok('Muchacha video: conserva su introducción en 4/4',vid.sections[0].tabMeasures.length===5&&vid.sections.length===5);
+    sel.value='muchacha-ojos-de-papel-video';sel.dispatchEvent(new w.Event('change'));await espera(300);d.getElementById('btn-play').click();await espera(4000);
+    ok('Muchacha video se reproduce sin errores',!falloSonido,falloSonido);d.getElementById('btn-play').click();
+  }
 
   // ---------- Cantata según el libro ----------
   w=await cargar('studio.html?t=9');
@@ -186,7 +202,7 @@ function cargar(src){return new Promise(r=>{$app.onload=()=>{const w=$app.conten
     const elegir=async id=>{sel.value=id;sel.dispatchEvent(new w.Event('change'));await espera(300)};
     const json=async()=>{d.getElementById('btn-open-json').click();await espera(150);const c=JSON.parse(d.getElementById('json-editor').value);d.getElementById('btn-close-json').click();return c};
     let mal=[];
-    for(const id of ['saturno-pablo-alboran','muchacha-ojos-de-papel','cantata-puentes-amarillos']){await elegir(id);const c=await json(),ids=c.sections.map(x=>x.id),usa=(c.form||[]).map(f=>Array.isArray(f)?f[0]:f);
+    for(const id of ['saturno-pablo-alboran','muchacha-ojos-de-papel','muchacha-ojos-de-papel-video','cantata-puentes-amarillos']){await elegir(id);const c=await json(),ids=c.sections.map(x=>x.id),usa=(c.form||[]).map(f=>Array.isArray(f)?f[0]:f);
       if(usa.some(x=>!ids.includes(x))||ids.some(x=>!usa.includes(x)))mal.push(id)}
     ok('Cada canción completa usa todas sus partes',!mal.length,mal.join());
     await elegir('saturno-pablo-alboran');
